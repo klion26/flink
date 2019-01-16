@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.contrib.streaming.state;
+package org.apache.flink.api.common.typeutils.base;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
@@ -31,6 +31,11 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import java.io.IOException;
 
+import static org.apache.flink.api.common.typeutils.base.KeySerializationUtils.isSerializerTypeVariableSized;
+import static org.apache.flink.api.common.typeutils.base.KeySerializationUtils.writeKeyGroup;
+import static org.apache.flink.api.common.typeutils.base.KeySerializationUtils.writeNameSpace;
+import static org.apache.flink.api.common.typeutils.base.KeySerializationUtils.writeVariableIntBytes;
+
 /**
  * Responsible for serialization of currentKey, currentGroup and namespace.
  * Will reuse the previous serialized currentKeyed if possible.
@@ -38,7 +43,7 @@ import java.io.IOException;
  */
 @NotThreadSafe
 @Internal
-class RocksDBSerializedCompositeKeyBuilder<K> {
+public class SerializedCompositeKeyBuilder<K> {
 
 	/** The serializer for the key. */
 	@Nonnull
@@ -59,7 +64,7 @@ class RocksDBSerializedCompositeKeyBuilder<K> {
 	@Nonnegative
 	private int afterKeyMark;
 
-	public RocksDBSerializedCompositeKeyBuilder(
+	public SerializedCompositeKeyBuilder(
 		@Nonnull TypeSerializer<K> keySerializer,
 		@Nonnegative int keyGroupPrefixBytes,
 		@Nonnegative int initialSize) {
@@ -67,12 +72,12 @@ class RocksDBSerializedCompositeKeyBuilder<K> {
 			keySerializer,
 			new DataOutputSerializer(initialSize),
 			keyGroupPrefixBytes,
-			RocksDBKeySerializationUtils.isSerializerTypeVariableSized(keySerializer),
+			isSerializerTypeVariableSized(keySerializer),
 			0);
 	}
 
 	@VisibleForTesting
-	RocksDBSerializedCompositeKeyBuilder(
+	SerializedCompositeKeyBuilder(
 		@Nonnull TypeSerializer<K> keySerializer,
 		@Nonnull DataOutputSerializer keyOutView,
 		@Nonnegative int keyGroupPrefixBytes,
@@ -146,6 +151,25 @@ class RocksDBSerializedCompositeKeyBuilder<K> {
 		return result;
 	}
 
+	public <UK> byte[] buildCompositeKeyNameSpaceUserKey(
+		@Nonnull byte[] namespace,
+		@Nonnull int nameSpaceSerializerLength,
+		@Nonnull UK userKey,
+		@Nonnull TypeSerializer<UK> userKeySerializer) throws IOException {
+		assert isKeyWritten();
+
+		keyOutView.write(namespace);
+		if (!keySerializerTypeVariableSized && nameSpaceSerializerLength < 0) {
+			writeVariableIntBytes(
+				afterKeyMark - keyGroupPrefixBytes,
+				keyOutView);
+		}
+		userKeySerializer.serialize(userKey, keyOutView);
+		byte[] result = keyOutView.getCopyOfBuffer();
+		resetToKey();
+		return result;
+	}
+
 	public byte[] getKeyGroupAndKey() {
 		Preconditions.checkState(afterKeyMark > 0);
 		return keyOutView.getCopyOfBuffer();
@@ -157,7 +181,7 @@ class RocksDBSerializedCompositeKeyBuilder<K> {
 		resetFully();
 
 		// write key-group
-		RocksDBKeySerializationUtils.writeKeyGroup(
+		writeKeyGroup(
 			keyGroupId,
 			keyGroupPrefixBytes,
 			keyOutView);
@@ -175,11 +199,11 @@ class RocksDBSerializedCompositeKeyBuilder<K> {
 
 		final boolean ambiguousCompositeKeyPossible = isAmbiguousCompositeKeyPossible(namespaceSerializer);
 		if (ambiguousCompositeKeyPossible) {
-			RocksDBKeySerializationUtils.writeVariableIntBytes(
+			writeVariableIntBytes(
 				afterKeyMark - keyGroupPrefixBytes,
 				keyOutView);
 		}
-		RocksDBKeySerializationUtils.writeNameSpace(
+		writeNameSpace(
 			namespace,
 			namespaceSerializer,
 			keyOutView,
@@ -202,6 +226,7 @@ class RocksDBSerializedCompositeKeyBuilder<K> {
 	@VisibleForTesting
 	boolean isAmbiguousCompositeKeyPossible(TypeSerializer<?> namespaceSerializer) {
 		return keySerializerTypeVariableSized &
-			RocksDBKeySerializationUtils.isSerializerTypeVariableSized(namespaceSerializer);
+			isSerializerTypeVariableSized(namespaceSerializer);
 	}
 }
+

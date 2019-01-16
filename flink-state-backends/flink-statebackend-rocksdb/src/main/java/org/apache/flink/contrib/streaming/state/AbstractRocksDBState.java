@@ -19,6 +19,7 @@ package org.apache.flink.contrib.streaming.state;
 
 import org.apache.flink.api.common.state.State;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.common.typeutils.base.SerializedCompositeKeyBuilder;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
@@ -34,7 +35,6 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.WriteOptions;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Base class for {@link State} implementations that store state in a RocksDB database.
@@ -55,7 +55,7 @@ public abstract class AbstractRocksDBState<K, N, V> implements InternalKvState<K
 	final TypeSerializer<V> valueSerializer;
 
 	/** The current namespace, which the next value methods will refer to. */
-	private N currentNamespace;
+	protected N currentNamespace;
 
 	/** Backend that holds the actual RocksDB instance where we store state. */
 	protected RocksDBKeyedStateBackend<K> backend;
@@ -71,7 +71,7 @@ public abstract class AbstractRocksDBState<K, N, V> implements InternalKvState<K
 
 	protected final DataInputDeserializer dataInputView;
 
-	private final RocksDBSerializedCompositeKeyBuilder<K> sharedKeyNamespaceSerializer;
+	protected final SerializedCompositeKeyBuilder<K> sharedKeyNamespaceSerializer;
 
 	/**
 	 * Creates a new RocksDB backed state.
@@ -176,28 +176,6 @@ public abstract class AbstractRocksDBState<K, N, V> implements InternalKvState<K
 	<T> byte[] serializeValue(T value, TypeSerializer<T> serializer) throws IOException {
 		dataOutputView.clear();
 		return serializeValueInternal(value, serializer);
-	}
-
-	<T> byte[] serializeValueList(
-		List<T> valueList,
-		TypeSerializer<T> elementSerializer,
-		byte delimiter) throws IOException {
-
-		dataOutputView.clear();
-		boolean first = true;
-
-		for (T value : valueList) {
-			Preconditions.checkNotNull(value, "You cannot add null to a value list.");
-
-			if (first) {
-				first = false;
-			} else {
-				dataOutputView.write(delimiter);
-			}
-			elementSerializer.serialize(value, dataOutputView);
-		}
-
-		return dataOutputView.getCopyOfBuffer();
 	}
 
 	public void migrateSerializedValue(

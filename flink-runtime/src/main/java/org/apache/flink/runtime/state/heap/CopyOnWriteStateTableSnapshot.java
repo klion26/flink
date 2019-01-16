@@ -149,8 +149,8 @@ public class CopyOnWriteStateTableSnapshot<K, N, S>
 			final KeyGroupRange keyGroupRange = keyContext.getKeyGroupRange();
 			ElementWriterFunction<CopyOnWriteStateTable.StateTableEntry<K, N, S>> elementWriterFunction =
 				(element, dov) -> {
-					localNamespaceSerializer.serialize(element.namespace, dov);
 					localKeySerializer.serialize(element.key, dov);
+					localNamespaceSerializer.serialize(element.namespace, dov);
 					localStateSerializer.serialize(element.state, dov);
 				};
 			StateTableKeyGroupPartitioner<K, N, S> stateTableKeyGroupPartitioner = stateSnapshotTransformer != null ?

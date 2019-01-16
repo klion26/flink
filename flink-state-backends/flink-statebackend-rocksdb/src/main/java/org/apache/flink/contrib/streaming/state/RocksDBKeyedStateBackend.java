@@ -29,6 +29,7 @@ import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.TypeSerializerSchemaCompatibility;
+import org.apache.flink.api.common.typeutils.base.SerializedCompositeKeyBuilder;
 import org.apache.flink.api.common.typeutils.base.array.BytePrimitiveArraySerializer;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.ConfigConstants;
@@ -247,7 +248,7 @@ public class RocksDBKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
 	 * the creation is important, because only after the restore we are certain that the key serializer
 	 * is final after potential reconfigurations during the restore.
 	 */
-	private RocksDBSerializedCompositeKeyBuilder<K> sharedRocksKeyBuilder;
+	private SerializedCompositeKeyBuilder<K> sharedRocksKeyBuilder;
 
 	public RocksDBKeyedStateBackend(
 		String operatorIdentifier,
@@ -469,7 +470,7 @@ public class RocksDBKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
 		return writeOptions;
 	}
 
-	RocksDBSerializedCompositeKeyBuilder<K> getSharedRocksKeyBuilder() {
+	SerializedCompositeKeyBuilder<K> getSharedRocksKeyBuilder() {
 		return sharedRocksKeyBuilder;
 	}
 
@@ -541,7 +542,7 @@ public class RocksDBKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
 			// it is important that we only create the key builder after the restore, and not before;
 			// restore operations may reconfigure the key serializer, so accessing the key serializer
 			// only now we can be certain that the key serializer used in the builder is final.
-			this.sharedRocksKeyBuilder = new RocksDBSerializedCompositeKeyBuilder<>(
+			this.sharedRocksKeyBuilder = new SerializedCompositeKeyBuilder<>(
 				getKeySerializer(),
 				keyGroupPrefixBytes,
 				32);

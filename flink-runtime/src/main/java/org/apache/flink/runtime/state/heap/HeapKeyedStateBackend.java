@@ -730,25 +730,23 @@ public class HeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
 
 						final long[] keyGroupRangeOffsets = new long[keyGroupRange.getNumberOfKeyGroups()];
 
-						for (int keyGroupPos = 0; keyGroupPos < keyGroupRange.getNumberOfKeyGroups(); ++keyGroupPos) {
-							int keyGroupId = keyGroupRange.getKeyGroupId(keyGroupPos);
-							keyGroupRangeOffsets[keyGroupPos] = localStream.getPos();
-							outView.writeInt(keyGroupId);
+						for (Map.Entry<StateUID, StateSnapshot> stateSnapshot :
+							cowStateStableSnapshots.entrySet()) {
+							StateSnapshot.StateKeyGroupWriter partitionedSnapshot =
+								stateSnapshot.getValue().getKeyGroupWriter();
+							for (int keyGroupPos = 0; keyGroupPos < keyGroupRange.getNumberOfKeyGroups(); ++keyGroupPos) {
+								int keyGroupId = keyGroupRange.getKeyGroupId(keyGroupPos);
 
-							for (Map.Entry<StateUID, StateSnapshot> stateSnapshot :
-								cowStateStableSnapshots.entrySet()) {
-								StateSnapshot.StateKeyGroupWriter partitionedSnapshot =
-
-									stateSnapshot.getValue().getKeyGroupWriter();
-								try (
-									OutputStream kgCompressionOut =
-										keyGroupCompressionDecorator.decorateWithCompression(localStream)) {
-									DataOutputViewStreamWrapper kgCompressionView =
+								try (OutputStream kgCompressionOut =
+										 keyGroupCompressionDecorator.decorateWithCompression(localStream)) {
+									DataOutputViewStreamWrapper kgCompresssionView =
 										new DataOutputViewStreamWrapper(kgCompressionOut);
-									kgCompressionView.writeShort(stateNamesToId.get(stateSnapshot.getKey()));
-									partitionedSnapshot.writeStateInKeyGroup(kgCompressionView, keyGroupId);
-								} // this will just close the outer compression stream
+
+									kgCompresssionView.writeShort(stateNamesToId.get(stateSnapshot.getKey()));
+									partitionedSnapshot.writeStateInKeyGroup(kgCompresssionView, keyGroupId);
+								}
 							}
+
 						}
 
 						if (snapshotCloseableRegistry.unregisterCloseable(streamWithResultProvider)) {

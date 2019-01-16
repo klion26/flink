@@ -21,7 +21,9 @@ package org.apache.flink.runtime.state.heap;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.core.memory.ByteArrayOutputStreamWithPos;
 import org.apache.flink.core.memory.DataOutputView;
+import org.apache.flink.core.memory.DataOutputViewStreamWrapper;
 import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
 import org.apache.flink.runtime.state.RegisteredKeyValueStateBackendMetaInfo;
 import org.apache.flink.runtime.state.StateEntry;
@@ -36,6 +38,7 @@ import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nonnull;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -348,6 +351,9 @@ public class NestedMapsStateTable<K, N, S> extends StateTable<K, N, S> {
 		private final TypeSerializer<N> namespaceSerializer;
 		private final TypeSerializer<S> stateSerializer;
 		private final StateSnapshotTransformer<S> snapshotFilter;
+		private static final int END_OF_KEY_GROUP_MARK = 0xFFFF;
+		private ByteArrayOutputStreamWithPos stream = new ByteArrayOutputStreamWithPos();
+		private DataOutputViewStreamWrapper outputView = new DataOutputViewStreamWrapper(stream);
 
 		NestedMapsStateTableSnapshot(
 			NestedMapsStateTable<K, N, S> owningTable, StateSnapshotTransformFactory<S> snapshotTransformFactory) {
@@ -383,24 +389,36 @@ public class NestedMapsStateTable<K, N, S> extends StateTable<K, N, S> {
 		@Override
 		public void writeStateInKeyGroup(@Nonnull DataOutputView dov, int keyGroupId) throws IOException {
 			final Map<N, Map<K, S>> keyGroupMap = owningStateTable.getMapForKeyGroup(keyGroupId);
+
 			if (null != keyGroupMap) {
 				Map<N, Map<K, S>> filteredMappings = filterMappingsInKeyGroupIfNeeded(keyGroupMap);
-				dov.writeInt(countMappingsInKeyGroup(filteredMappings));
 				for (Map.Entry<N, Map<K, S>> namespaceEntry : filteredMappings.entrySet()) {
 					final N namespace = namespaceEntry.getKey();
+					stream.reset();
+					namespaceSerializer.serialize(namespace, outputView);
+					byte[] namespaceBytes = stream.toByteArray();
 					final Map<K, S> namespaceMap = namespaceEntry.getValue();
 					for (Map.Entry<K, S> keyEntry : namespaceMap.entrySet()) {
-						writeElement(namespace, keyEntry, dov);
+						writeElement(namespaceBytes, keyEntry, dov);
 					}
 				}
-			} else {
-				dov.writeInt(0);
 			}
+			dov.write(END_OF_KEY_GROUP_MARK);
 		}
 
-		private void writeElement(N namespace, Map.Entry<K, S> keyEntry, DataOutputView dov) throws IOException {
-			namespaceSerializer.serialize(namespace, dov);
-			keySerializer.serialize(keyEntry.getKey(), dov);
+		private void writeElement(byte[] namespaceBytes, Map.Entry<K, S> keyEntry, DataOutputView dov) throws IOException {
+			stream.reset();
+			keySerializer.serialize(keyEntry.getKey(), outputView);
+			byte[] keyBytes = stream.getBuf();
+
+			dov.write(keyBytes.length);
+			dov.write(keyBytes);
+
+			dov.write(namespaceBytes.length);
+			dov.write(namespaceBytes);
+
+			stream.reset();
+
 			stateSerializer.serialize(keyEntry.getValue(), dov);
 		}
 

@@ -225,6 +225,8 @@ public class KeyGroupPartitioner<T> {
 		@Nonnegative
 		private final int firstKeyGroup;
 
+		private static final int END_OF_KEY_GROUP_MARK = 0xFFFF;
+
 		PartitioningResult(
 			@Nonnull ElementWriterFunction<T> elementWriterFunction,
 			@Nonnegative int firstKeyGroup,
@@ -253,13 +255,12 @@ public class KeyGroupPartitioner<T> {
 			int startOffset = getKeyGroupStartOffsetInclusive(keyGroupId);
 			int endOffset = getKeyGroupEndOffsetExclusive(keyGroupId);
 
-			// write number of mappings in key-group
-			dov.writeInt(endOffset - startOffset);
-
 			// write mappings
 			for (int i = startOffset; i < endOffset; ++i) {
 				elementWriterFunction.writeElement(partitionedElements[i], dov);
 			}
+
+			dov.write(END_OF_KEY_GROUP_MARK);
 		}
 	}
 
