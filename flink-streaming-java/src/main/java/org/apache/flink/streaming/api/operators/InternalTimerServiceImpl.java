@@ -245,11 +245,13 @@ public class InternalTimerServiceImpl<K, N> implements InternalTimerService<N>, 
 	}
 
 	public void advanceWatermark(long time) throws Exception {
+		System.out.println(String.format("Advanced watermark %s.", time));
 		currentWatermark = time;
 
 		InternalTimer<K, N> timer;
 
 		while ((timer = eventTimeTimersQueue.peek()) != null && timer.getTimestamp() <= time) {
+			System.out.println(timer);
 			eventTimeTimersQueue.poll();
 			keyContext.setCurrentKey(timer.getKey());
 			triggerTarget.onEventTime(timer);

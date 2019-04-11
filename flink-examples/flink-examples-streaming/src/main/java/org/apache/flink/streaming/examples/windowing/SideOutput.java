@@ -1,12 +1,13 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,21 +22,21 @@ import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
-import org.apache.flink.streaming.api.windowing.assigners.EventTimeSessionWindows;
+import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.util.OutputTag;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * An example of session windowing that keys events by ID and groups and counts them in
- * session with gaps of 3 milliseconds.
+ * Sideoutput.
  */
-public class SessionWindowing {
-
+public class SideOutput {
 	@SuppressWarnings("serial")
 	public static void main(String[] args) throws Exception {
 
@@ -63,36 +64,44 @@ public class SessionWindowing {
 		input.add(new Tuple3<>("c", 11L, 1));
 
 		DataStream<Tuple3<String, Long, Integer>> source = env
-				.addSource(new SourceFunction<Tuple3<String, Long, Integer>>() {
-					private static final long serialVersionUID = 1L;
+			.addSource(new SourceFunction<Tuple3<String, Long, Integer>>() {
+				private static final long serialVersionUID = 1L;
 
-					@Override
-					public void run(SourceContext<Tuple3<String, Long, Integer>> ctx) throws Exception {
-						for (Tuple3<String, Long, Integer> value : input) {
-							ctx.collectWithTimestamp(value, value.f1);
-							ctx.emitWatermark(new Watermark(value.f1 - 1));
-						}
-						ctx.emitWatermark(new Watermark(Long.MAX_VALUE));
+				@Override
+				public void run(SourceContext<Tuple3<String, Long, Integer>> ctx) throws Exception {
+					for (Tuple3<String, Long, Integer> value : input) {
+						ctx.collectWithTimestamp(value, value.f1);
+						ctx.emitWatermark(new Watermark(value.f1 - 1));
 					}
+//						ctx.emitWatermark(new Watermark(Long.MAX_VALUE));
+				}
 
-					@Override
-					public void cancel() {
-					}
-				});
+				@Override
+				public void cancel() {
+				}
+			});
 
+		final OutputTag<Tuple3<String, Long, Integer>> lateOutputTag = new OutputTag<Tuple3<String, Long, Integer>>("late-data"){};
 		// We create sessions for each id with max timeout of 3 time units
 		DataStream<Tuple3<String, Long, Integer>> aggregated = source
-				.keyBy(0)
-				.window(EventTimeSessionWindows.withGap(Time.milliseconds(3L)))
-				.sum(2);
+			.keyBy(0)
+			.window(SlidingEventTimeWindows.of(Time.milliseconds(3), Time.milliseconds(3)))
+			.allowedLateness(Time.milliseconds(2))
+			.sideOutputLateData(lateOutputTag)
+			.sum(2);
 
 		if (fileOutput) {
 			aggregated.writeAsText(params.get("output"));
 		} else {
 			System.out.println("Printing result to stdout. Use --output to specify output path.");
-			aggregated.print();
+//			aggregated.print();
 		}
+
+		DataStream<Tuple3<String, Long, Integer>> lateStream = ((SingleOutputStreamOperator<Tuple3<String, Long, Integer>>) aggregated).getSideOutput(lateOutputTag);
+
+		lateStream.keyBy(0).sum(2).print();
 
 		env.execute();
 	}
 }
+
