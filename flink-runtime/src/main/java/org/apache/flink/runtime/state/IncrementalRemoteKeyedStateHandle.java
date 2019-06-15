@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -129,7 +128,8 @@ public class IncrementalRemoteKeyedStateHandle implements IncrementalKeyedStateH
 		return checkpointId;
 	}
 
-	public Map<StateHandleID, StreamStateHandle> getSharedState() {
+	@Override
+	public Map<StateHandleID, StreamStateHandle> getSharedStates() {
 		return sharedState;
 	}
 
@@ -141,15 +141,10 @@ public class IncrementalRemoteKeyedStateHandle implements IncrementalKeyedStateH
 		return metaStateHandle;
 	}
 
+	@Override
 	@Nonnull
 	public UUID getBackendIdentifier() {
 		return backendIdentifier;
-	}
-
-	@Nonnull
-	@Override
-	public Set<StateHandleID> getSharedStateHandleIDs() {
-		return getSharedState().keySet();
 	}
 
 	public SharedStateRegistry getSharedStateRegistry() {
@@ -259,6 +254,18 @@ public class IncrementalRemoteKeyedStateHandle implements IncrementalKeyedStateH
 			// deduplication and returns the previous reference.
 			sharedStateHandle.setValue(result.getReference());
 		}
+
+		// This step we delete the useless underlying file, wants to solve the following problem:
+		// max concurrent checkpoint = 2
+		// checkpoint 1 includes 1.sst, 2.sst, 3.sst
+		// checkpoint 2 includes 2.sst, 3.sst, 4.sst
+		// checkpoint 3 includes 4.sst
+		// checkpoint 2 and checkpoint 3 are both based on checkpoint 1
+		// so we'll register 4.ss twice with different state handle(checkpoint 2 and checkpoint 3)
+		// when register 4.sst in checkpoint 3, wo can't directly delete the underlying file,
+		// because we don't know if there exist any more state handle in checkpoint 3 will use
+		// the same underlying file(maybe 5.sst).
+		sharedStateRegistry.delUselessUnderlyingFile();
 	}
 
 	/**
@@ -293,7 +300,7 @@ public class IncrementalRemoteKeyedStateHandle implements IncrementalKeyedStateH
 		if (!getKeyGroupRange().equals(that.getKeyGroupRange())) {
 			return false;
 		}
-		if (!getSharedState().equals(that.getSharedState())) {
+		if (!getSharedStates().equals(that.getSharedStates())) {
 			return false;
 		}
 		if (!getPrivateState().equals(that.getPrivateState())) {
@@ -311,7 +318,7 @@ public class IncrementalRemoteKeyedStateHandle implements IncrementalKeyedStateH
 		int result = getBackendIdentifier().hashCode();
 		result = 31 * result + getKeyGroupRange().hashCode();
 		result = 31 * result + (int) (getCheckpointId() ^ (getCheckpointId() >>> 32));
-		result = 31 * result + getSharedState().hashCode();
+		result = 31 * result + getSharedStates().hashCode();
 		result = 31 * result + getPrivateState().hashCode();
 		result = 31 * result + getMetaStateHandle().hashCode();
 		return result;
