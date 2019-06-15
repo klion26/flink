@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 public class SavepointV2SerializerTest {
 
 	@Rule
-	TemporaryFolder folder = new TemporaryFolder();
+	public TemporaryFolder folder = new TemporaryFolder();
 
 	@Test
 	public void testCheckpointWithNoState() throws Exception {

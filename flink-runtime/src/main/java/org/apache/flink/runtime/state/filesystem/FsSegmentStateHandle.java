@@ -90,7 +90,7 @@ public class FsSegmentStateHandle implements StreamStateHandle {
 
 	@Override
 	public String toString() {
-		return "FileSegmentStateHandle{" +
+		return "FSegmentStateHandle{" +
 			"filePath=" + filePath +
 			", startPosition=" + startPosition +
 			", endPosition=" + endPosition +
@@ -103,7 +103,7 @@ public class FsSegmentStateHandle implements StreamStateHandle {
 		if (this == o) {
 			return true;
 		}
-		if (!(o instanceof FileStateHandle)) {
+		if (!(o instanceof FsSegmentStateHandle)) {
 			return false;
 		}
 

@@ -3674,9 +3674,9 @@ public class CheckpointCoordinatorTest extends TestLogger {
 						verify(keyedStateHandle, times(1)).registerSharedStates(createdSharedStateRegistries.get(0));
 						IncrementalRemoteKeyedStateHandle incrementalKeyedStateHandle = (IncrementalRemoteKeyedStateHandle) keyedStateHandle;
 
-						sharedHandlesByCheckpoint.get(cp).putAll(incrementalKeyedStateHandle.getSharedState());
+						sharedHandlesByCheckpoint.get(cp).putAll(incrementalKeyedStateHandle.getSharedStates());
 
-						for (StreamStateHandle streamStateHandle : incrementalKeyedStateHandle.getSharedState().values()) {
+						for (StreamStateHandle streamStateHandle : incrementalKeyedStateHandle.getSharedStates().values()) {
 							assertTrue(!(streamStateHandle instanceof PlaceholderStreamStateHandle));
 							verify(streamStateHandle, never()).discardState();
 							++sharedHandleCount;

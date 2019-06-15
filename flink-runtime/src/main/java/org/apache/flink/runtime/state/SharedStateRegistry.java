@@ -18,15 +18,21 @@
 
 package org.apache.flink.runtime.state;
 
+import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.core.fs.Path;
 import org.apache.flink.runtime.concurrent.Executors;
+import org.apache.flink.runtime.state.filesystem.FsSegmentStateHandle;
 import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -49,6 +55,14 @@ public class SharedStateRegistry implements AutoCloseable {
 	/** All registered state objects by an artificial key */
 	private final Map<SharedStateRegistryKey, SharedStateRegistry.SharedStateEntry> registeredStates;
 
+	/**
+	 * Used in {@link org.apache.flink.runtime.state.filesystem.FsSegmentStateBackend}.
+	 * will track the reference of the underlying file.
+	 */
+	private final Map<String, Integer> fileRefCounts;
+
+	private Set<String> underlyingFileOfDuplicatedStatehandles;
+
 	/** This flag indicates whether or not the registry is open or if close() was called */
 	private boolean open;
 
@@ -62,6 +76,8 @@ public class SharedStateRegistry implements AutoCloseable {
 
 	public SharedStateRegistry(Executor asyncDisposalExecutor) {
 		this.registeredStates = new HashMap<>();
+		this.fileRefCounts = new HashMap<>();
+		this.underlyingFileOfDuplicatedStatehandles = new HashSet<>();
 		this.asyncDisposalExecutor = Preconditions.checkNotNull(asyncDisposalExecutor);
 		this.open = true;
 	}
@@ -107,14 +123,19 @@ public class SharedStateRegistry implements AutoCloseable {
 				// delete if this is a real duplicate
 				if (!Objects.equals(state, entry.stateHandle)) {
 					scheduledStateDeletion = state;
-					LOG.trace("Identified duplicate state registration under key {}. New state {} was determined to " +
-							"be an unnecessary copy of existing state {} and will be dropped.",
-						registrationKey,
-						state,
-						entry.stateHandle);
+					descFileRefCountIfNeeded(scheduledStateDeletion, false);
+					if (LOG.isTraceEnabled()) {
+						LOG.trace(
+							"Identified duplicate state registration under key {}. New state {} was determined to " + "be an unnecessary copy of existing state {} and will be dropped.",
+							registrationKey,
+							state,
+							entry.stateHandle);
+					}
 				}
 				entry.increaseReferenceCount();
 			}
+
+			increaseFileRefCountIfNeeded(entry.stateHandle);
 		}
 
 		scheduleAsyncDelete(scheduledStateDeletion);
@@ -157,9 +178,13 @@ public class SharedStateRegistry implements AutoCloseable {
 				scheduledStateDeletion = null;
 				result = new Result(entry);
 			}
+
+			descFileRefCountIfNeeded(entry.getStateHandle(), true);
 		}
 
-		LOG.trace("Unregistered shared state {} under key {}.", entry, registrationKey);
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("Unregistered shared state {} under key {}.", entry, registrationKey);
+		}
 		scheduleAsyncDelete(scheduledStateDeletion);
 		return result;
 	}
@@ -182,11 +207,85 @@ public class SharedStateRegistry implements AutoCloseable {
 		}
 	}
 
+	private void increaseFileRefCountIfNeeded(StreamStateHandle handle) {
+		if (handle instanceof FsSegmentStateHandle) {
+			String filePath = ((FsSegmentStateHandle) handle).getFilePath().toUri().toString();
+			fileRefCounts.put(filePath, fileRefCounts.computeIfAbsent(filePath, (nothing) -> 0) + 1);
+		}
+	}
+
+	/**
+	 * Decrease the reference count of underlying file used by handle,
+	 * if the ref count becomes zero
+	 * 	- if deleteDirectly is true, will delete the underlying file directly.
+	 * 	- else will add the underlying file to a set(and will delete it if possible in
+	 * if the ref count becomes zero and deleteDirectly is true.
+	 */
+	private void descFileRefCountIfNeeded(StreamStateHandle handle, boolean deleteDirectly) {
+		if (handle instanceof FsSegmentStateHandle) {
+			String segmentFilePath = ((FsSegmentStateHandle) handle).getFilePath().toUri().toString();
+
+			// we know that we'are in the sync mode.
+			Integer count = fileRefCounts.get(segmentFilePath);
+			if (count != null) {
+				int newRefCount = fileRefCounts.get(segmentFilePath) - 1;
+				if (newRefCount <= 0) {
+					fileRefCounts.remove(segmentFilePath);
+					if (deleteDirectly) {
+						deleteQuietly(segmentFilePath);
+					} else {
+						underlyingFileOfDuplicatedStatehandles.add(segmentFilePath);
+					}
+				} else {
+					fileRefCounts.put(segmentFilePath, newRefCount);
+				}
+			} else {
+				// if we come here, we know that we come from a duplicated state handle.
+				underlyingFileOfDuplicatedStatehandles.add(segmentFilePath);
+			}
+		}
+	}
+
+	// this function should be called after the state handels of one checkpoint have been all registered.
+	// this help function wants to solve the following problem:
+	// max concurrent checkpoint = 2
+	// checkpoint 1 includes 1.sst, 2.sst, 3.sst
+	// checkpoint 2 includes 2.sst, 3.sst, 4.sst
+	// checkpoint 3 includes 4.sst
+	// checkpoint 2 and checkpoint 3 are both based on checkpoint 1
+	// so we'll register 4.ss twice with different state handle(checkpoint 2 and checkpoint 3)
+	// when register 4.sst in checkpoint 3, wo can't directly delete the underlying file,
+	// because we don't know if there exist any more state handle in checkpoint 3 will use
+	// the same underlying file(maybe 5.sst).
+	public void delUselessUnderlyingFile() {
+		for (String path : underlyingFileOfDuplicatedStatehandles) {
+			if (!fileRefCounts.keySet().contains(path)) {
+				deleteQuietly(path);
+			}
+		}
+		underlyingFileOfDuplicatedStatehandles.clear();
+	}
+
+	@VisibleForTesting
+	public Map<String, Integer> getFileRefCounts() {
+		return fileRefCounts;
+	}
+
+	private void deleteQuietly(String path) {
+		Path path2Del = new Path(path);
+		try {
+			path2Del.getFileSystem().delete(path2Del, false);
+		} catch (IOException e) {
+			LOG.error("Can not delete underlying checkpoint file {}.", path);
+		}
+	}
+
 	@Override
 	public String toString() {
 		synchronized (registeredStates) {
 			return "SharedStateRegistry{" +
 				"registeredStates=" + registeredStates +
+				"fileRefCounts=" + fileRefCounts +
 				'}';
 		}
 	}
