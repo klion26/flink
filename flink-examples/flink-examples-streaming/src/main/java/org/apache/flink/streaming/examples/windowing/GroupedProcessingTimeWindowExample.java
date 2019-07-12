@@ -18,18 +18,23 @@
 
 package org.apache.flink.streaming.examples.windowing;
 
+import org.apache.flink.api.common.functions.CoGroupFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.streaming.api.datastream.CoGroupedStreams;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
+import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.Window;
 import org.apache.flink.util.Collector;
+import org.apache.flink.util.OutputTag;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -61,7 +66,26 @@ public class GroupedProcessingTimeWindowExample {
 				public void invoke(Tuple2<Long, Long> value) {
 				}
 			});
-
+		DataStream abc = stream.coGroup(stream)
+			.where(new KeySelector<Tuple2<Long, Long>, Long>() {
+				@Override
+				public Long getKey(Tuple2<Long, Long> value) throws Exception {
+					return value.f0;
+				}
+			})
+			.equalTo(a -> a.f1)
+			.window(SlidingEventTimeWindows.of(Time.milliseconds(3000), Time.milliseconds(3000)))
+			.sideOutputLateData(new OutputTag<CoGroupedStreams.TaggedUnion<Tuple2<Long, Long>, Tuple2<Long, Long>>>("abcdef"){})
+			.apply(new CoGroupFunction<Tuple2<Long, Long>, Tuple2<Long, Long>, Tuple2<Long, Long>>() {
+				@Override
+				public void coGroup(
+					Iterable<Tuple2<Long, Long>> first,
+					Iterable<Tuple2<Long, Long>> second,
+					Collector<Tuple2<Long, Long>> out) throws Exception {
+					first.forEach(a -> out.collect(a));
+				}
+			});
+		((SingleOutputStreamOperator) abc).getSideOutput(new OutputTag<CoGroupedStreams.TaggedUnion<Tuple2<Long, Long>, Tuple2<Long, Long>>>("abcdef"){});
 		env.execute();
 	}
 

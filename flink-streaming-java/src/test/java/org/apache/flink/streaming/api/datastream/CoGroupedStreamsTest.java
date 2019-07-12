@@ -24,6 +24,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
+import org.apache.flink.util.OutputTag;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -79,4 +80,19 @@ public class CoGroupedStreamsTest {
 		Assert.assertEquals(lateness.toMilliseconds(), withLateness.getAllowedLateness().toMilliseconds());
 	}
 
+	@Test
+	public void testSideOutputTage() {
+		Time lateness = Time.milliseconds(42L);
+
+		OutputTag<CoGroupedStreams.TaggedUnion<String, String>> tag = new OutputTag<CoGroupedStreams.TaggedUnion<String, String>>("tag"){};
+		CoGroupedStreams.WithWindow<String, String, String, TimeWindow> withLateness = dataStream1
+			.coGroup(dataStream2)
+			.where(keySelector)
+			.equalTo(keySelector)
+			.window(tsAssigner)
+			.allowedLateness(lateness)
+			.sideOutputLateData(tag);
+
+		Assert.assertEquals(tag, withLateness.getOutputTag());
+	}
 }

@@ -45,6 +45,7 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.triggers.Trigger;
 import org.apache.flink.streaming.api.windowing.windows.Window;
 import org.apache.flink.util.Collector;
+import org.apache.flink.util.OutputTag;
 import org.apache.flink.util.Preconditions;
 
 import java.io.IOException;
@@ -185,7 +186,7 @@ public class CoGroupedStreams<T1, T2> {
 			 */
 			@PublicEvolving
 			public <W extends Window> WithWindow<T1, T2, KEY, W> window(WindowAssigner<? super TaggedUnion<T1, T2>, W> assigner) {
-				return new WithWindow<>(input1, input2, keySelector1, keySelector2, keyType, assigner, null, null, null);
+				return new WithWindow<>(input1, input2, keySelector1, keySelector2, keyType, assigner, null, null, null, null);
 			}
 		}
 	}
@@ -219,6 +220,8 @@ public class CoGroupedStreams<T1, T2> {
 
 		private final Time allowedLateness;
 
+		private final OutputTag<TaggedUnion<T1, T2>> outputTag;
+
 		private WindowedStream<TaggedUnion<T1, T2>, KEY, W> windowedStream;
 
 		protected WithWindow(DataStream<T1> input1,
@@ -229,7 +232,8 @@ public class CoGroupedStreams<T1, T2> {
 				WindowAssigner<? super TaggedUnion<T1, T2>, W> windowAssigner,
 				Trigger<? super TaggedUnion<T1, T2>, ? super W> trigger,
 				Evictor<? super TaggedUnion<T1, T2>, ? super W> evictor,
-				Time allowedLateness) {
+				Time allowedLateness,
+				OutputTag<TaggedUnion<T1, T2>> outputTag) {
 			this.input1 = input1;
 			this.input2 = input2;
 
@@ -242,6 +246,7 @@ public class CoGroupedStreams<T1, T2> {
 			this.evictor = evictor;
 
 			this.allowedLateness = allowedLateness;
+			this.outputTag = outputTag;
 		}
 
 		/**
@@ -250,7 +255,7 @@ public class CoGroupedStreams<T1, T2> {
 		@PublicEvolving
 		public WithWindow<T1, T2, KEY, W> trigger(Trigger<? super TaggedUnion<T1, T2>, ? super W> newTrigger) {
 			return new WithWindow<>(input1, input2, keySelector1, keySelector2, keyType,
-					windowAssigner, newTrigger, evictor, allowedLateness);
+					windowAssigner, newTrigger, evictor, allowedLateness, outputTag);
 		}
 
 		/**
@@ -263,7 +268,7 @@ public class CoGroupedStreams<T1, T2> {
 		@PublicEvolving
 		public WithWindow<T1, T2, KEY, W> evictor(Evictor<? super TaggedUnion<T1, T2>, ? super W> newEvictor) {
 			return new WithWindow<>(input1, input2, keySelector1, keySelector2, keyType,
-					windowAssigner, trigger, newEvictor, allowedLateness);
+					windowAssigner, trigger, newEvictor, allowedLateness, outputTag);
 		}
 
 		/**
@@ -273,7 +278,13 @@ public class CoGroupedStreams<T1, T2> {
 		@PublicEvolving
 		public WithWindow<T1, T2, KEY, W> allowedLateness(Time newLateness) {
 			return new WithWindow<>(input1, input2, keySelector1, keySelector2, keyType,
-					windowAssigner, trigger, evictor, newLateness);
+					windowAssigner, trigger, evictor, newLateness, outputTag);
+		}
+
+		@PublicEvolving
+		public WithWindow<T1, T2, KEY, W> sideOutputLateData(OutputTag<TaggedUnion<T1, T2>> outputTag) {
+			return new WithWindow<>(input1, input2, keySelector1, keySelector2, keyType,
+				windowAssigner, trigger, evictor, allowedLateness, outputTag);
 		}
 
 		/**
@@ -353,6 +364,9 @@ public class CoGroupedStreams<T1, T2> {
 			if (allowedLateness != null) {
 				windowedStream.allowedLateness(allowedLateness);
 			}
+			if (outputTag != null) {
+				windowedStream.sideOutputLateData(outputTag);
+			}
 
 			return windowedStream.apply(new CoGroupWindowFunction<T1, T2, T, KEY, W>(function), resultType);
 		}
@@ -377,6 +391,11 @@ public class CoGroupedStreams<T1, T2> {
 		@VisibleForTesting
 		Time getAllowedLateness() {
 			return allowedLateness;
+		}
+
+		@VisibleForTesting
+		OutputTag<TaggedUnion<T1, T2>> getOutputTag() {
+			return outputTag;
 		}
 
 		@VisibleForTesting
