@@ -108,6 +108,11 @@ class DefaultOperatorStateBackendSnapshotStrategy extends AbstractSnapshotStrate
 			new AsyncSnapshotCallable<SnapshotResult<OperatorStateHandle>>() {
 
 				@Override
+				protected void logWhenCloseException(Throwable e) {
+
+				}
+
+				@Override
 				protected SnapshotResult<OperatorStateHandle> callInternal() throws Exception {
 
 					CheckpointStreamFactory.CheckpointStateOutputStream localOut =

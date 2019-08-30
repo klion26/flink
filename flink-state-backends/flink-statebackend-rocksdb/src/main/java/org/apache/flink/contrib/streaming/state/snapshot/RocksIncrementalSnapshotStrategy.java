@@ -155,10 +155,11 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
 		LOG.trace("Local RocksDB checkpoint goes to backup path {}.", snapshotDirectory);
 
 		final List<StateMetaInfoSnapshot> stateMetaInfoSnapshots = new ArrayList<>(kvStateInformation.size());
-		final Set<StateHandleID> baseSstFiles = snapshotMetaData(checkpointId, stateMetaInfoSnapshots);
+		final Set<StateHandleID> baseSstFiles = snapshotMetaData(checkpointId, stateMetaInfoSnapshots, snapshotDirectory);
 
 		takeDBNativeCheckpoint(snapshotDirectory);
 
+		LOG.info("Take DB Native success for {} with {} thread {}.", checkpointId, snapshotDirectory, Thread.currentThread());
 		final RocksDBIncrementalSnapshotOperation snapshotOperation =
 			new RocksDBIncrementalSnapshotOperation(
 				checkpointId,
@@ -221,7 +222,8 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
 
 	private Set<StateHandleID> snapshotMetaData(
 		long checkpointId,
-		@Nonnull List<StateMetaInfoSnapshot> stateMetaInfoSnapshots) {
+		@Nonnull List<StateMetaInfoSnapshot> stateMetaInfoSnapshots,
+		SnapshotDirectory snapshotDirectory) {
 
 		final long lastCompletedCheckpoint;
 		final Set<StateHandleID> baseSstFiles;
@@ -232,7 +234,7 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
 			baseSstFiles = materializedSstFiles.get(lastCompletedCheckpoint);
 		}
 		LOG.trace("Taking incremental snapshot for checkpoint {}. Snapshot is based on last completed checkpoint {} " +
-			"assuming the following (shared) files as base: {}.", checkpointId, lastCompletedCheckpoint, baseSstFiles);
+			"assuming the following (shared) files as base: {}, snapshotDirectory {}.", checkpointId, lastCompletedCheckpoint, baseSstFiles, snapshotDirectory);
 
 		// snapshot meta data to save
 		for (Map.Entry<String, RocksDbKvStateInfo> stateMetaInfoEntry : kvStateInformation.entrySet()) {
@@ -297,6 +299,11 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
 		}
 
 		@Override
+		protected void logWhenCloseException(Throwable e) {
+			LOG.info("RocksDBIncrement snapshot close snapshot io exception for {}", checkpointId, e);
+		}
+
+		@Override
 		protected SnapshotResult<KeyedStateHandle> callInternal() throws Exception {
 
 			boolean completed = false;
@@ -310,6 +317,8 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
 
 			try {
 
+				LOG.info("start callInternal for {}, thread {}, directory {}.", checkpointId, Thread.currentThread(), localBackupDirectory);
+
 				metaStateHandle = materializeMetaData();
 
 				// Sanity checks - they should never fail
@@ -319,6 +328,7 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
 
 				uploadSstFiles(sstFiles, miscFiles);
 
+				LOG.info("CallInternal after uploadSstFIles {}, thread {}, directory {}.", checkpointId, Thread.currentThread(), localBackupDirectory);
 				synchronized (materializedSstFiles) {
 					materializedSstFiles.put(checkpointId, sstFiles.keySet());
 				}
@@ -352,9 +362,11 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
 
 				completed = true;
 
+				LOG.info("callInternal completed for {}, thread {}, directory {}.", checkpointId, Thread.currentThread(), localBackupDirectory);
 				return snapshotResult;
 			} finally {
 				if (!completed) {
+					LOG.info("CallInternal not complete for {}, thread {}, directory {}.", checkpointId, Thread.currentThread(), localBackupDirectory);
 					final List<StateObject> statesToDiscard =
 						new ArrayList<>(1 + miscFiles.size() + sstFiles.size());
 					statesToDiscard.add(metaStateHandle);
@@ -368,6 +380,7 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
 		@Override
 		protected void cleanupProvidedResources() {
 			try {
+				LOG.info("cleanupProvideResources checkpointId {} thread {}, localBackupDirectory exist {} localBackupDirectory {}", checkpointId, Thread.currentThread(), localBackupDirectory.exists(), localBackupDirectory.getDirectory());
 				if (localBackupDirectory.exists()) {
 					LOG.trace("Running cleanup for local RocksDB backup directory {}.", localBackupDirectory);
 					boolean cleanupOk = localBackupDirectory.cleanup();

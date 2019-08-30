@@ -490,6 +490,7 @@ public class RocksDBStateBackend extends AbstractStateBackend implements Configu
 			getNextStoragePath(),
 			"job_" + jobId + "_op_" + fileCompatibleIdentifier + "_uuid_" + UUID.randomUUID());
 
+		LOG.info("RcoksDBStateBackend with basePath {}.", instanceBasePath);
 		LocalRecoveryConfig localRecoveryConfig =
 			env.getTaskStateManager().createLocalRecoveryConfig();
 

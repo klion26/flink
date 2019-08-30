@@ -221,6 +221,11 @@ public class AsyncSnapshotCallableTest {
 		}
 
 		@Override
+		protected void logWhenCloseException(Throwable e) {
+
+		}
+
+		@Override
 		protected String callInternal() throws Exception {
 
 			addInvocation(METHOD_CALL);

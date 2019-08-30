@@ -80,7 +80,11 @@ public abstract class AsyncSnapshotCallable<T> implements Callable<T> {
 					throw ex;
 				}
 			} finally {
-				closeSnapshotIO();
+				try {
+					closeSnapshotIO();
+				} catch (Throwable throable) {
+					logWhenCloseException(throable);
+				}
 				cleanup();
 			}
 		}
@@ -143,6 +147,8 @@ public abstract class AsyncSnapshotCallable<T> implements Callable<T> {
 	 * the end of the method.
 	 */
 	protected abstract T callInternal() throws Exception;
+
+	protected abstract void logWhenCloseException(Throwable e);
 
 	/**
 	 * This method implements the cleanup of resources that have been passed in (from the sync part). Called after the

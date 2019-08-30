@@ -214,6 +214,10 @@ public class RocksFullSnapshotStrategy<K> extends RocksDBSnapshotStrategyBase<K>
 		}
 
 		@Override
+		protected void logWhenCloseException(Throwable e) {
+		}
+
+		@Override
 		protected SnapshotResult<KeyedStateHandle> callInternal() throws Exception {
 			final KeyGroupRangeOffsets keyGroupRangeOffsets = new KeyGroupRangeOffsets(keyGroupRange);
 			final CheckpointStreamWithResultProvider checkpointStreamWithResultProvider =

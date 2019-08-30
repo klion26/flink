@@ -157,6 +157,11 @@ class HeapSnapshotStrategy<K>
 		final AsyncSnapshotCallable<SnapshotResult<KeyedStateHandle>> asyncSnapshotCallable =
 			new AsyncSnapshotCallable<SnapshotResult<KeyedStateHandle>>() {
 				@Override
+				protected void logWhenCloseException(Throwable e) {
+
+				}
+
+				@Override
 				protected SnapshotResult<KeyedStateHandle> callInternal() throws Exception {
 
 					final CheckpointStreamWithResultProvider streamWithResultProvider =
