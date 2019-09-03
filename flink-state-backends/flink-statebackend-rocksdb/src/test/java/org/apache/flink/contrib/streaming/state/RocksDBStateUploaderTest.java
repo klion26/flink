@@ -73,7 +73,7 @@ public class RocksDBStateUploaderTest extends TestLogger {
 		Map<StateHandleID, Path> filePaths = new HashMap<>(1);
 		filePaths.put(new StateHandleID("mockHandleID"), new Path(file.getPath()));
 		try (RocksDBStateUploader rocksDBStateUploader = new RocksDBStateUploader(5)) {
-			rocksDBStateUploader.uploadFilesToCheckpointFs(filePaths, checkpointStreamFactory, new CloseableRegistry());
+			rocksDBStateUploader.uploadFilesToCheckpointFs(1, null, filePaths, checkpointStreamFactory, new CloseableRegistry());
 			fail();
 		} catch (Exception e) {
 			assertEquals(expectedException, e);
@@ -104,7 +104,7 @@ public class RocksDBStateUploaderTest extends TestLogger {
 
 		try (RocksDBStateUploader rocksDBStateUploader = new RocksDBStateUploader(5)) {
 			Map<StateHandleID, StreamStateHandle> sstFiles =
-				rocksDBStateUploader.uploadFilesToCheckpointFs(sstFilePaths, checkpointStreamFactory, new CloseableRegistry());
+				rocksDBStateUploader.uploadFilesToCheckpointFs(1, null, sstFilePaths, checkpointStreamFactory, new CloseableRegistry());
 
 			for (Map.Entry<StateHandleID, Path> entry : sstFilePaths.entrySet()) {
 				assertStateContentEqual(entry.getValue(), sstFiles.get(entry.getKey()).openInputStream());

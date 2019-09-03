@@ -25,12 +25,16 @@ import org.apache.flink.core.fs.Path;
 import org.apache.flink.runtime.concurrent.FutureUtils;
 import org.apache.flink.runtime.state.CheckpointStreamFactory;
 import org.apache.flink.runtime.state.CheckpointedStateScope;
+import org.apache.flink.runtime.state.SnapshotDirectory;
 import org.apache.flink.runtime.state.StateHandleID;
 import org.apache.flink.runtime.state.StreamStateHandle;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.IOUtils;
 import org.apache.flink.util.function.CheckedSupplier;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
@@ -46,6 +50,7 @@ import java.util.function.Supplier;
  */
 public class RocksDBStateUploader extends RocksDBStateDataTransfer {
 	private static final int READ_BUFFER_SIZE = 16 * 1024;
+	private static final Logger LOG = LoggerFactory.getLogger(RocksDBStateUploader.class);
 
 	public RocksDBStateUploader(int numberOfSnapshottingThreads) {
 		super(numberOfSnapshottingThreads);
@@ -60,15 +65,25 @@ public class RocksDBStateUploader extends RocksDBStateDataTransfer {
 	 * @throws Exception Thrown if can not upload all the files.
 	 */
 	public Map<StateHandleID, StreamStateHandle> uploadFilesToCheckpointFs(
+		long checkpointId,
+		SnapshotDirectory localDirectory,
 		@Nonnull Map<StateHandleID, Path> files,
 		CheckpointStreamFactory checkpointStreamFactory,
 		CloseableRegistry closeableRegistry) throws Exception {
 
+		LOG.info("Come in uploadFilesToCheckpointFs for {} thread {} directory {}.",
+			checkpointId,
+			Thread.currentThread(),
+			localDirectory);
 		Map<StateHandleID, StreamStateHandle> handles = new HashMap<>();
 
 		Map<StateHandleID, CompletableFuture<StreamStateHandle>> futures =
-			createUploadFutures(files, checkpointStreamFactory, closeableRegistry);
+			createUploadFutures(checkpointId, localDirectory, files, checkpointStreamFactory, closeableRegistry);
 
+		LOG.info("Start to uploadFilesToCheckpointFs for {} thread {} directory {}.",
+			checkpointId,
+			Thread.currentThread(),
+			localDirectory);
 		try {
 			FutureUtils.waitForAll(futures.values()).get();
 
@@ -76,6 +91,11 @@ public class RocksDBStateUploader extends RocksDBStateDataTransfer {
 				handles.put(entry.getKey(), entry.getValue().get());
 			}
 		} catch (ExecutionException e) {
+			LOG.info("Exception to uploadFilesToCheckpointFs for {} thread {} directory {}.",
+				checkpointId,
+				Thread.currentThread(),
+				localDirectory,
+				e);
 			Throwable throwable = ExceptionUtils.stripExecutionException(e);
 			throwable = ExceptionUtils.stripException(throwable, RuntimeException.class);
 			if (throwable instanceof IOException) {
@@ -85,20 +105,40 @@ public class RocksDBStateUploader extends RocksDBStateDataTransfer {
 			}
 		}
 
+		LOG.info("Complete to uploadFilesToCheckpointFs for {} thread {} directory {}.",
+			checkpointId,
+			Thread.currentThread(),
+			localDirectory);
+
 		return handles;
 	}
 
 	private Map<StateHandleID, CompletableFuture<StreamStateHandle>> createUploadFutures(
+		long checkpointId,
+		SnapshotDirectory localDirectory,
 		Map<StateHandleID, Path> files,
 		CheckpointStreamFactory checkpointStreamFactory,
 		CloseableRegistry closeableRegistry) {
 		Map<StateHandleID, CompletableFuture<StreamStateHandle>> futures = new HashMap<>(files.size());
 
+		LOG.info("Before createUploadFutures for {} thread {} directory {}.",
+			checkpointId,
+			Thread.currentThread(),
+			localDirectory);
 		for (Map.Entry<StateHandleID, Path> entry : files.entrySet()) {
 			final Supplier<StreamStateHandle> supplier =
 				CheckedSupplier.unchecked(() -> uploadLocalFileToCheckpointFs(entry.getValue(), checkpointStreamFactory, closeableRegistry));
 			futures.put(entry.getKey(), CompletableFuture.supplyAsync(supplier, executorService));
+			LOG.info("Create one future for {} thread {} path {} directory {}.",
+				checkpointId,
+				Thread.currentThread(),
+				entry.getValue(),
+				localDirectory);
 		}
+		LOG.info("After createUploadFutures for {} thread {} directory {}.",
+			checkpointId,
+			Thread.currentThread(),
+			localDirectory);
 
 		return futures;
 	}

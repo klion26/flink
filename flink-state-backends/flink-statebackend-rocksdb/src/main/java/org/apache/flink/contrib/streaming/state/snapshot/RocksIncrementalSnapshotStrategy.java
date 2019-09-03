@@ -424,6 +424,7 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
 			@Nonnull Map<StateHandleID, StreamStateHandle> sstFiles,
 			@Nonnull Map<StateHandleID, StreamStateHandle> miscFiles) throws Exception {
 
+			LOG.info("Before uploading sst files for {} thread {} directory {}, ", checkpointId, Thread.currentThread(), localBackupDirectory);
 			// write state data
 			Preconditions.checkState(localBackupDirectory.exists());
 
@@ -434,14 +435,28 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
 			if (fileStatuses != null) {
 				createUploadFilePaths(fileStatuses, sstFiles, sstFilePaths, miscFilePaths);
 
+				LOG.info("Before uploading files for {} thread {} directory {} fileStatus {}.",
+					checkpointId,
+					Thread.currentThread(),
+					localBackupDirectory,
+					fileStatuses);
 				sstFiles.putAll(stateUploader.uploadFilesToCheckpointFs(
+					checkpointId,
+					localBackupDirectory,
 					sstFilePaths,
 					checkpointStreamFactory,
 					snapshotCloseableRegistry));
 				miscFiles.putAll(stateUploader.uploadFilesToCheckpointFs(
+					checkpointId,
+					localBackupDirectory,
 					miscFilePaths,
 					checkpointStreamFactory,
 					snapshotCloseableRegistry));
+				LOG.info("After uploading files for {} thread {} directory {} fileStatus {}.",
+					checkpointId,
+					Thread.currentThread(),
+					localBackupDirectory,
+					fileStatuses);
 			}
 		}
 
