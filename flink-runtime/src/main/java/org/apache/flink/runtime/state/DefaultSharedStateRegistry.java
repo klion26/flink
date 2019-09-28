@@ -39,15 +39,15 @@ import java.util.concurrent.RejectedExecutionException;
  * maintain the reference count of {@link StreamStateHandle}s by a key that (logically) identifies
  * them.
  */
-public class SharedStateRegistry implements AutoCloseable {
+public class DefaultSharedStateRegistry implements SharedStateRegistryInterface {
 
-	private static final Logger LOG = LoggerFactory.getLogger(SharedStateRegistry.class);
+	private static final Logger LOG = LoggerFactory.getLogger(DefaultSharedStateRegistry.class);
 
 	/** A singleton object for the default implementation of a {@link SharedStateRegistryFactory} */
-	public static final SharedStateRegistryFactory DEFAULT_FACTORY = SharedStateRegistry::new;
+	public static final SharedStateRegistryFactory DEFAULT_FACTORY = DefaultSharedStateRegistry::new;
 
 	/** All registered state objects by an artificial key */
-	private final Map<SharedStateRegistryKey, SharedStateRegistry.SharedStateEntry> registeredStates;
+	private final Map<SharedStateRegistryKey, SharedStateEntry> registeredStates;
 
 	/** This flag indicates whether or not the registry is open or if close() was called */
 	private boolean open;
@@ -56,11 +56,11 @@ public class SharedStateRegistry implements AutoCloseable {
 	private final Executor asyncDisposalExecutor;
 
 	/** Default uses direct executor to delete unreferenced state */
-	public SharedStateRegistry() {
+	public DefaultSharedStateRegistry() {
 		this(Executors.directExecutor());
 	}
 
-	public SharedStateRegistry(Executor asyncDisposalExecutor) {
+	public DefaultSharedStateRegistry(Executor asyncDisposalExecutor) {
 		this.registeredStates = new HashMap<>();
 		this.asyncDisposalExecutor = Preconditions.checkNotNull(asyncDisposalExecutor);
 		this.open = true;
@@ -82,12 +82,13 @@ public class SharedStateRegistry implements AutoCloseable {
 	 * @return the result of this registration request, consisting of the state handle that is
 	 * registered under the key by the end of the operation and its current reference count.
 	 */
+	@Override
 	public Result registerReference(SharedStateRegistryKey registrationKey, StreamStateHandle state) {
 
 		Preconditions.checkNotNull(state);
 
 		StreamStateHandle scheduledStateDeletion = null;
-		SharedStateRegistry.SharedStateEntry entry;
+		SharedStateEntry entry;
 
 		synchronized (registeredStates) {
 
@@ -101,17 +102,17 @@ public class SharedStateRegistry implements AutoCloseable {
 				// ever be inserted to the registry.
 				Preconditions.checkState(!isPlaceholder(state), "Attempt to reference unknown state: " + registrationKey);
 
-				entry = new SharedStateRegistry.SharedStateEntry(state);
+				entry = new SharedStateEntry(state);
 				registeredStates.put(registrationKey, entry);
 			} else {
 				// delete if this is a real duplicate
-				if (!Objects.equals(state, entry.stateHandle)) {
+				if (!Objects.equals(state, entry.getStateHandle())) {
 					scheduledStateDeletion = state;
 					LOG.trace("Identified duplicate state registration under key {}. New state {} was determined to " +
 							"be an unnecessary copy of existing state {} and will be dropped.",
 						registrationKey,
 						state,
-						entry.stateHandle);
+						entry.getStateHandle());
 				}
 				entry.increaseReferenceCount();
 			}
@@ -131,13 +132,14 @@ public class SharedStateRegistry implements AutoCloseable {
 	 * and the state handle, or null if the state handle was deleted through this request. Returns null if the registry
 	 * was previously closed.
 	 */
+	@Override
 	public Result unregisterReference(SharedStateRegistryKey registrationKey) {
 
 		Preconditions.checkNotNull(registrationKey);
 
 		final Result result;
 		final StreamStateHandle scheduledStateDeletion;
-		SharedStateRegistry.SharedStateEntry entry;
+		SharedStateEntry entry;
 
 		synchronized (registeredStates) {
 
@@ -169,6 +171,7 @@ public class SharedStateRegistry implements AutoCloseable {
 	 *
 	 * @param stateHandles The shared states to register.
 	 */
+	@Override
 	public void registerAll(Iterable<? extends CompositeStateHandle> stateHandles) {
 
 		if (stateHandles == null) {
@@ -189,6 +192,11 @@ public class SharedStateRegistry implements AutoCloseable {
 				"registeredStates=" + registeredStates +
 				'}';
 		}
+	}
+
+	@Override
+	public void cleanUpAfterEveryCheckpoint() {
+		// need to to do nothing.
 	}
 
 	private void scheduleAsyncDelete(StreamStateHandle streamStateHandle) {
@@ -217,108 +225,6 @@ public class SharedStateRegistry implements AutoCloseable {
 	public void close() {
 		synchronized (registeredStates) {
 			open = false;
-		}
-	}
-
-	/**
-	 * An entry in the registry, tracking the handle and the corresponding reference count.
-	 */
-	private static class SharedStateEntry {
-
-		/** The shared state handle */
-		private final StreamStateHandle stateHandle;
-
-		/** The current reference count of the state handle */
-		private int referenceCount;
-
-		SharedStateEntry(StreamStateHandle value) {
-			this.stateHandle = value;
-			this.referenceCount = 1;
-		}
-
-		StreamStateHandle getStateHandle() {
-			return stateHandle;
-		}
-
-		int getReferenceCount() {
-			return referenceCount;
-		}
-
-		void increaseReferenceCount() {
-			++referenceCount;
-		}
-
-		void decreaseReferenceCount() {
-			--referenceCount;
-		}
-
-		@Override
-		public String toString() {
-			return "SharedStateEntry{" +
-				"stateHandle=" + stateHandle +
-				", referenceCount=" + referenceCount +
-				'}';
-		}
-	}
-
-	/**
-	 * The result of an attempt to (un)/reference state
-	 */
-	public static class Result {
-
-		/** The (un)registered state handle from the request */
-		private final StreamStateHandle reference;
-
-		/** The reference count to the state handle after the request to (un)register */
-		private final int referenceCount;
-
-		private Result(SharedStateEntry sharedStateEntry) {
-			this.reference = sharedStateEntry.getStateHandle();
-			this.referenceCount = sharedStateEntry.getReferenceCount();
-		}
-
-		public Result(StreamStateHandle reference, int referenceCount) {
-			Preconditions.checkArgument(referenceCount >= 0);
-
-			this.reference = reference;
-			this.referenceCount = referenceCount;
-		}
-
-		public StreamStateHandle getReference() {
-			return reference;
-		}
-
-		public int getReferenceCount() {
-			return referenceCount;
-		}
-
-		@Override
-		public String toString() {
-			return "Result{" +
-				"reference=" + reference +
-				", referenceCount=" + referenceCount +
-				'}';
-		}
-	}
-
-	/**
-	 * Encapsulates the operation the delete state handles asynchronously.
-	 */
-	private static final class AsyncDisposalRunnable implements Runnable {
-
-		private final StateObject toDispose;
-
-		public AsyncDisposalRunnable(StateObject toDispose) {
-			this.toDispose = Preconditions.checkNotNull(toDispose);
-		}
-
-		@Override
-		public void run() {
-			try {
-				toDispose.discardState();
-			} catch (Exception e) {
-				LOG.warn("A problem occurred during asynchronous disposal of a shared state object: {}", toDispose, e);
-			}
 		}
 	}
 }

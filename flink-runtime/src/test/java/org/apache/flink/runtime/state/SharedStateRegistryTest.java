@@ -36,11 +36,11 @@ public class SharedStateRegistryTest {
 	@Test
 	public void testRegistryNormal() {
 
-		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
+		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
 
 		// register one state
 		TestSharedState firstState = new TestSharedState("first");
-		SharedStateRegistry.Result result = sharedStateRegistry.registerReference(firstState.getRegistrationKey(), firstState);
+		SharedStateRegistryInterface.Result result = sharedStateRegistry.registerReference(firstState.getRegistrationKey(), firstState);
 		assertEquals(1, result.getReferenceCount());
 		assertTrue(firstState == result.getReference());
 		assertFalse(firstState.isDiscarded());
@@ -86,7 +86,7 @@ public class SharedStateRegistryTest {
 	 */
 	@Test(expected = IllegalStateException.class)
 	public void testUnregisterWithUnexistedKey() {
-		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
+		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
 		sharedStateRegistry.unregisterReference(new SharedStateRegistryKey("non-existent"));
 	}
 

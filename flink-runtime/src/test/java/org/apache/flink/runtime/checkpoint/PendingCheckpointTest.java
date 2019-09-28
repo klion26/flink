@@ -28,7 +28,7 @@ import org.apache.flink.runtime.executiongraph.ExecutionVertex;
 import org.apache.flink.runtime.jobgraph.JobVertexID;
 import org.apache.flink.runtime.jobgraph.OperatorID;
 import org.apache.flink.runtime.state.CheckpointStorageLocationReference;
-import org.apache.flink.runtime.state.SharedStateRegistry;
+import org.apache.flink.runtime.state.SharedStateRegistryInterface;
 import org.apache.flink.runtime.state.filesystem.FsCheckpointStorageLocation;
 
 import org.junit.Assert;
@@ -185,7 +185,7 @@ public class PendingCheckpointTest {
 		QueueExecutor executor = new QueueExecutor();
 
 		OperatorState state = mock(OperatorState.class);
-		doNothing().when(state).registerSharedStates(any(SharedStateRegistry.class));
+		doNothing().when(state).registerSharedStates(any(SharedStateRegistryInterface.class));
 
 		// Abort declined
 		PendingCheckpoint pending = createPendingCheckpoint(props, executor);

@@ -21,7 +21,7 @@ package org.apache.flink.runtime.checkpoint;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.runtime.jobgraph.JobStatus;
 import org.apache.flink.runtime.jobgraph.OperatorID;
-import org.apache.flink.runtime.state.SharedStateRegistry;
+import org.apache.flink.runtime.state.SharedStateRegistryInterface;
 import org.apache.flink.runtime.state.testutils.TestCompletedCheckpointStorageLocation;
 import org.apache.flink.util.TestLogger;
 
@@ -66,7 +66,7 @@ public abstract class CompletedCheckpointStoreTest extends TestLogger {
 	 */
 	@Test
 	public void testAddAndGetLatestCheckpoint() throws Exception {
-		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
+		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
 		CompletedCheckpointStore checkpoints = createCompletedCheckpoints(4);
 		
 		// Empty state
@@ -92,7 +92,7 @@ public abstract class CompletedCheckpointStoreTest extends TestLogger {
 	 */
 	@Test
 	public void testAddCheckpointMoreThanMaxRetained() throws Exception {
-		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
+		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
 		CompletedCheckpointStore checkpoints = createCompletedCheckpoints(1);
 
 		TestCompletedCheckpoint[] expected = new TestCompletedCheckpoint[] {
@@ -138,7 +138,7 @@ public abstract class CompletedCheckpointStoreTest extends TestLogger {
 	 */
 	@Test
 	public void testGetAllCheckpoints() throws Exception {
-		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
+		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
 		CompletedCheckpointStore checkpoints = createCompletedCheckpoints(4);
 
 		TestCompletedCheckpoint[] expected = new TestCompletedCheckpoint[] {
@@ -164,7 +164,7 @@ public abstract class CompletedCheckpointStoreTest extends TestLogger {
 	 */
 	@Test
 	public void testDiscardAllCheckpoints() throws Exception {
-		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
+		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
 		CompletedCheckpointStore checkpoints = createCompletedCheckpoints(4);
 
 		TestCompletedCheckpoint[] expected = new TestCompletedCheckpoint[] {
@@ -195,7 +195,7 @@ public abstract class CompletedCheckpointStoreTest extends TestLogger {
 
 	public static TestCompletedCheckpoint createCheckpoint(
 		int id,
-		SharedStateRegistry sharedStateRegistry) throws IOException {
+		SharedStateRegistryInterface sharedStateRegistry) throws IOException {
 
 		int numberOfStates = 4;
 		CheckpointProperties props = CheckpointProperties.forCheckpoint(CheckpointRetentionPolicy.NEVER_RETAIN_AFTER_TERMINATION);
@@ -218,7 +218,7 @@ public abstract class CompletedCheckpointStoreTest extends TestLogger {
 		return new TestCompletedCheckpoint(new JobID(), id, 0, operatorGroupState, props);
 	}
 
-	protected void verifyCheckpointRegistered(Collection<OperatorState> operatorStates, SharedStateRegistry registry) {
+	protected void verifyCheckpointRegistered(Collection<OperatorState> operatorStates, SharedStateRegistryInterface registry) {
 		for (OperatorState operatorState : operatorStates) {
 			for (OperatorSubtaskState subtaskState : operatorState.getStates()) {
 				Assert.assertTrue(((TestOperatorSubtaskState)subtaskState).registered);
@@ -354,7 +354,7 @@ public abstract class CompletedCheckpointStoreTest extends TestLogger {
 		}
 
 		@Override
-		public void registerSharedStates(SharedStateRegistry sharedStateRegistry) {
+		public void registerSharedStates(SharedStateRegistryInterface sharedStateRegistry) {
 			super.registerSharedStates(sharedStateRegistry);
 			Assert.assertFalse(discarded);
 			registered = true;

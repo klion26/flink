@@ -22,7 +22,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.HighAvailabilityOptions;
 import org.apache.flink.runtime.concurrent.Executors;
 import org.apache.flink.runtime.jobgraph.JobStatus;
-import org.apache.flink.runtime.state.SharedStateRegistry;
+import org.apache.flink.runtime.state.SharedStateRegistryInterface;
 import org.apache.flink.runtime.util.ZooKeeperUtils;
 import org.apache.flink.runtime.zookeeper.ZooKeeperResource;
 import org.apache.flink.runtime.zookeeper.ZooKeeperStateHandleStore;
@@ -62,7 +62,7 @@ public class ZooKeeperCompletedCheckpointStoreTest extends TestLogger {
 	 */
 	@Test
 	public void testDiscardingSubsumedCheckpoints() throws Exception {
-		final SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
+		final SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
 		final Configuration configuration = new Configuration();
 		configuration.setString(HighAvailabilityOptions.HA_ZOOKEEPER_QUORUM, zooKeeperResource.getConnectString());
 
@@ -94,7 +94,7 @@ public class ZooKeeperCompletedCheckpointStoreTest extends TestLogger {
 	 */
 	@Test
 	public void testDiscardingCheckpointsAtShutDown() throws Exception {
-		final SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
+		final SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
 		final Configuration configuration = new Configuration();
 		configuration.setString(HighAvailabilityOptions.HA_ZOOKEEPER_QUORUM, zooKeeperResource.getConnectString());
 

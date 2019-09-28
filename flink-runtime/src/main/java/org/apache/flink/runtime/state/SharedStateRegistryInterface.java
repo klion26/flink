@@ -18,18 +18,20 @@
 
 package org.apache.flink.runtime.state;
 
-import java.util.concurrent.Executor;
-
 /**
- * Simple factory to produce {@link SharedStateRegistryInterface} objects.
+ * Registry which used to track shared state handle usages, if the state is in the
+ * registry, that means this handle is still being used in some checkpoint, and when
+ * the handle is no longer in the registry, we need to delete the resource used by the handle.
  */
-public interface SharedStateRegistryFactory {
+public interface SharedStateRegistryInterface extends AutoCloseable {
+	Result registerReference(SharedStateRegistryKey registrationKey, StreamStateHandle state);
+	Result unregisterReference(SharedStateRegistryKey registrationKey);
+	void registerAll(Iterable<? extends CompositeStateHandle> stateHandles);
 
 	/**
-	 * Factory method for {@link SharedStateRegistryInterface}.
-	 *
-	 * @param deleteExecutor executor used to run (async) deletes.
-	 * @return a SharedStateRegistry object
+	 * This function has to be called after all the handles have been registered.
+	 * used to clean up the useless resource used in checkpoint.
 	 */
-	SharedStateRegistryInterface create(Executor deleteExecutor);
+	void cleanUpAfterEveryCheckpoint();
 }
+

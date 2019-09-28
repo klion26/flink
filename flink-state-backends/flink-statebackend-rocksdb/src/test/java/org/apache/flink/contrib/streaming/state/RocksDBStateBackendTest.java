@@ -37,7 +37,7 @@ import org.apache.flink.runtime.state.IncrementalRemoteKeyedStateHandle;
 import org.apache.flink.runtime.state.KeyGroupRange;
 import org.apache.flink.runtime.state.KeyedStateHandle;
 import org.apache.flink.runtime.state.LocalRecoveryConfig;
-import org.apache.flink.runtime.state.SharedStateRegistry;
+import org.apache.flink.runtime.state.SharedStateRegistryInterface;
 import org.apache.flink.runtime.state.SnapshotResult;
 import org.apache.flink.runtime.state.StateBackendTestBase;
 import org.apache.flink.runtime.state.StateHandleID;
@@ -502,7 +502,7 @@ public class RocksDBStateBackendTest extends StateBackendTestBase<RocksDBStateBa
 					backend.getPartitionedState(VoidNamespace.INSTANCE, VoidNamespaceSerializer.INSTANCE, kvId);
 
 				Queue<IncrementalRemoteKeyedStateHandle> previousStateHandles = new LinkedList<>();
-				SharedStateRegistry sharedStateRegistry = spy(new SharedStateRegistry());
+				SharedStateRegistryInterface sharedStateRegistry = spy(new SharedStateRegistryInterface());
 				for (int checkpointId = 0; checkpointId < 3; ++checkpointId) {
 
 					reset(sharedStateRegistry);
@@ -557,7 +557,7 @@ public class RocksDBStateBackendTest extends StateBackendTestBase<RocksDBStateBa
 		}
 	}
 
-	private void checkRemove(IncrementalRemoteKeyedStateHandle remove, SharedStateRegistry registry) throws Exception {
+	private void checkRemove(IncrementalRemoteKeyedStateHandle remove, SharedStateRegistryInterface registry) throws Exception {
 		for (StateHandleID id : remove.getSharedState().keySet()) {
 			verify(registry, times(0)).unregisterReference(
 				remove.createSharedStateRegistryKeyFromFileName(id));

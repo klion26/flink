@@ -18,18 +18,43 @@
 
 package org.apache.flink.runtime.state;
 
-import java.util.concurrent.Executor;
-
 /**
- * Simple factory to produce {@link SharedStateRegistryInterface} objects.
+ * An entry in the registry, tracking the handle and the corresponding reference count.
  */
-public interface SharedStateRegistryFactory {
+public class SharedStateEntry {
+	/** The shared state handle */
+	private final StreamStateHandle stateHandle;
 
-	/**
-	 * Factory method for {@link SharedStateRegistryInterface}.
-	 *
-	 * @param deleteExecutor executor used to run (async) deletes.
-	 * @return a SharedStateRegistry object
-	 */
-	SharedStateRegistryInterface create(Executor deleteExecutor);
+	/** The current reference count of the state handle */
+	private int referenceCount;
+
+	SharedStateEntry(StreamStateHandle value) {
+		this.stateHandle = value;
+		this.referenceCount = 1;
+	}
+
+	StreamStateHandle getStateHandle() {
+		return stateHandle;
+	}
+
+	int getReferenceCount() {
+		return referenceCount;
+	}
+
+	void increaseReferenceCount() {
+		++referenceCount;
+	}
+
+	void decreaseReferenceCount() {
+		--referenceCount;
+	}
+
+	@Override
+	public String toString() {
+		return "SharedStateEntry{" +
+			"stateHandle=" + stateHandle +
+			", referenceCount=" + referenceCount +
+			'}';
+	}
 }
+

@@ -23,7 +23,7 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.runtime.jobgraph.JobStatus;
 import org.apache.flink.runtime.jobgraph.OperatorID;
 import org.apache.flink.runtime.state.CompletedCheckpointStorageLocation;
-import org.apache.flink.runtime.state.SharedStateRegistry;
+import org.apache.flink.runtime.state.SharedStateRegistryInterface;
 import org.apache.flink.runtime.state.StateUtil;
 import org.apache.flink.runtime.state.StreamStateHandle;
 import org.apache.flink.util.ExceptionUtils;
@@ -202,7 +202,7 @@ public class CompletedCheckpoint implements Serializable {
 	 *
 	 * @param sharedStateRegistry The registry where shared states are registered
 	 */
-	public void registerSharedStatesAfterRestored(SharedStateRegistry sharedStateRegistry) {
+	public void registerSharedStatesAfterRestored(SharedStateRegistryInterface sharedStateRegistry) {
 		sharedStateRegistry.registerAll(operatorStates.values());
 	}
 

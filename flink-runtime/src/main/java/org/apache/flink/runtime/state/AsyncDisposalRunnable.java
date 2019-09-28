@@ -18,18 +18,30 @@
 
 package org.apache.flink.runtime.state;
 
-import java.util.concurrent.Executor;
+import org.apache.flink.util.Preconditions;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Simple factory to produce {@link SharedStateRegistryInterface} objects.
+ * Encapsulates the operation the delete state handles asynchronously.
  */
-public interface SharedStateRegistryFactory {
+public class AsyncDisposalRunnable implements Runnable {
+	private static final Logger LOG = LoggerFactory.getLogger(AsyncDisposalRunnable.class);
 
-	/**
-	 * Factory method for {@link SharedStateRegistryInterface}.
-	 *
-	 * @param deleteExecutor executor used to run (async) deletes.
-	 * @return a SharedStateRegistry object
-	 */
-	SharedStateRegistryInterface create(Executor deleteExecutor);
+	private final StateObject toDispose;
+
+	public AsyncDisposalRunnable(StateObject toDispose) {
+		this.toDispose = Preconditions.checkNotNull(toDispose);
+	}
+
+	@Override
+	public void run() {
+		try {
+			toDispose.discardState();
+		} catch (Exception e) {
+			LOG.warn("A problem occurred during asynchronous disposal of a shared state object: {}", toDispose, e);
+		}
+	}
 }
+

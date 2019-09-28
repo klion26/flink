@@ -20,7 +20,7 @@ package org.apache.flink.runtime.checkpoint;
 
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.runtime.jobgraph.JobStatus;
-import org.apache.flink.runtime.state.SharedStateRegistry;
+import org.apache.flink.runtime.state.SharedStateRegistryInterface;
 
 import org.junit.Test;
 
@@ -55,7 +55,7 @@ public class StandaloneCompletedCheckpointStoreTest extends CompletedCheckpointS
 	 */
 	@Test
 	public void testShutdownDiscardsCheckpoints() throws Exception {
-		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
+		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
 		CompletedCheckpointStore store = createCompletedCheckpoints(1);
 		TestCompletedCheckpoint checkpoint = createCheckpoint(0, sharedStateRegistry);
 		Collection<OperatorState> operatorStates = checkpoint.getOperatorStates().values();
@@ -76,7 +76,7 @@ public class StandaloneCompletedCheckpointStoreTest extends CompletedCheckpointS
 	 */
 	@Test
 	public void testSuspendDiscardsCheckpoints() throws Exception {
-		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
+		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
 		CompletedCheckpointStore store = createCompletedCheckpoints(1);
 		TestCompletedCheckpoint checkpoint = createCheckpoint(0, sharedStateRegistry);
 		Collection<OperatorState> taskStates = checkpoint.getOperatorStates().values();
