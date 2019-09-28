@@ -34,6 +34,14 @@ import java.net.URI;
  */
 public class FsSegmentStateBackend extends FsStateBackend {
 
+	public FsSegmentStateBackend(URI checkpointDataUri) {
+		super(checkpointDataUri);
+	}
+
+	public FsSegmentStateBackend(String checkpointDirURIStr) {
+		super(checkpointDirURIStr);
+	}
+
 	public FsSegmentStateBackend(
 		URI checkpointDirectory,
 		@Nullable URI defaultSavepointDirectory,
