@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,7 +32,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class SavepointV2Test {
+/**
+ * Test for {@link SavepointV3}.
+ */
+public class SavepointV3Test {
 	@Rule
 	public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
@@ -40,7 +43,7 @@ public class SavepointV2Test {
 	 * Simple test of savepoint methods.
 	 */
 	@Test
-	public void testSavepointV2() throws Exception {
+	public void testSavepointV3() throws Exception {
 		final Random rnd = new Random();
 
 		final long checkpointId = rnd.nextInt(Integer.MAX_VALUE) + 1;
@@ -49,14 +52,14 @@ public class SavepointV2Test {
 		final int numMasterStates = 7;
 
 		Collection<OperatorState> taskStates =
-				CheckpointTestUtils.createOperatorStates(rnd, false, numTaskStates, numSubtaskStates, temporaryFolder);
+			CheckpointTestUtils.createOperatorStates(rnd, true, numTaskStates, numSubtaskStates, temporaryFolder);
 
 		Collection<MasterState> masterStates =
-				CheckpointTestUtils.createRandomMasterStates(rnd, numMasterStates);
+			CheckpointTestUtils.createRandomMasterStates(rnd, numMasterStates);
 
-		SavepointV2 checkpoint = new SavepointV2(checkpointId, taskStates, masterStates);
+		SavepointV3 checkpoint = new SavepointV3(checkpointId, taskStates, masterStates);
 
-		assertEquals(2, checkpoint.getVersion());
+		assertEquals(3, checkpoint.getVersion());
 		assertEquals(checkpointId, checkpoint.getCheckpointId());
 		assertEquals(taskStates, checkpoint.getOperatorStates());
 		assertEquals(masterStates, checkpoint.getMasterStates());
@@ -70,3 +73,4 @@ public class SavepointV2Test {
 		assertTrue(checkpoint.getMasterStates().isEmpty());
 	}
 }
+

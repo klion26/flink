@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,16 +29,16 @@ import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerU
 import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerUtil.serializeSavepoint;
 
 /**
- * (De)serializer for checkpoint metadata format version 2.
- * 
+ * (De)serializer for checkpoint metadata format version 3.
+ *
  * <p>This format version adds
- * 
+ *
  * <p>Basic checkpoint metadata layout:
  * <pre>
  *  +--------------+---------------+-----------------+
  *  | checkpointID | master states | operator states |
  *  +--------------+---------------+-----------------+
- *  
+ *
  *  Master state:
  *  +--------------+---------------------+---------+------+---------------+
  *  | magic number | num remaining bytes | version | name | payload bytes |
@@ -47,23 +47,22 @@ import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerU
  */
 @Internal
 @VisibleForTesting
-public class SavepointV2Serializer implements SavepointSerializer<SavepointV2> {
-
+public class SavepointV3Serializer implements SavepointSerializer<SavepointV3>  {
 
 	/** The singleton instance of the serializer */
-	public static final SavepointV2Serializer INSTANCE = new SavepointV2Serializer();
+	public static final SavepointV3Serializer INSTANCE = new SavepointV3Serializer();
 
 	// ------------------------------------------------------------------------
 
 	/** Singleton, not meant to be instantiated */
-	private SavepointV2Serializer() {}
+	private SavepointV3Serializer() {}
 
 	// ------------------------------------------------------------------------
 	//  (De)serialization entry points
 	// ------------------------------------------------------------------------
 
 	@Override
-	public void serialize(SavepointV2 checkpointMetadata, DataOutputStream dos) throws IOException {
+	public void serialize(SavepointV3 checkpointMetadata, DataOutputStream dos) throws IOException {
 		serializeSavepoint(
 			checkpointMetadata.getCheckpointId(),
 			checkpointMetadata.getMasterStates(),
@@ -72,7 +71,8 @@ public class SavepointV2Serializer implements SavepointSerializer<SavepointV2> {
 	}
 
 	@Override
-	public SavepointV2 deserialize(DataInputStream dis, ClassLoader cl) throws IOException {
-		return (SavepointV2) deserializeSavepoint(dis, cl, SavepointV2.VERSION);
+	public SavepointV3 deserialize(DataInputStream dis, ClassLoader cl) throws IOException {
+		return (SavepointV3) deserializeSavepoint(dis, cl, SavepointV3.VERSION);
 	}
 }
+

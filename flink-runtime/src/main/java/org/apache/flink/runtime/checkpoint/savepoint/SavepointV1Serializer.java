@@ -20,20 +20,14 @@ package org.apache.flink.runtime.checkpoint.savepoint;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.core.fs.Path;
 import org.apache.flink.runtime.checkpoint.SubtaskState;
 import org.apache.flink.runtime.checkpoint.TaskState;
 import org.apache.flink.runtime.jobgraph.JobVertexID;
 import org.apache.flink.runtime.state.ChainedStateHandle;
-import org.apache.flink.runtime.state.OperatorStateHandle;
-import org.apache.flink.runtime.state.KeyGroupRange;
-import org.apache.flink.runtime.state.KeyGroupRangeOffsets;
 import org.apache.flink.runtime.state.KeyGroupsStateHandle;
 import org.apache.flink.runtime.state.KeyedStateHandle;
-import org.apache.flink.runtime.state.OperatorStreamStateHandle;
+import org.apache.flink.runtime.state.OperatorStateHandle;
 import org.apache.flink.runtime.state.StreamStateHandle;
-import org.apache.flink.runtime.state.filesystem.FileStateHandle;
-import org.apache.flink.runtime.state.memory.ByteStreamStateHandle;
 import org.apache.flink.util.Preconditions;
 
 import java.io.DataInputStream;
@@ -41,9 +35,19 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerUtil.BYTE_STREAM_STATE_HANDLE;
+import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerUtil.FILE_STREAM_STATE_HANDLE;
+import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerUtil.KEY_GROUPS_HANDLE;
+import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerUtil.NULL_HANDLE;
+import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerUtil.deserializeByteStreamStateHandle;
+import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerUtil.deserializeFileStreamStateHandle;
+import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerUtil.deserializeKeyGroupsHandle;
+import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerUtil.deserializeOperatorStateHandle;
+import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerUtil.serializeKeyGroupsStateHandle;
+import static org.apache.flink.runtime.checkpoint.savepoint.SavepointSerializerUtil.serializeOperatorStateHandle;
 
 /**
  * Deserializer for checkpoints written in format {@code 1} (Flink 1.2.x format)
@@ -54,12 +58,6 @@ import java.util.Map;
  */
 @Internal
 public class SavepointV1Serializer implements SavepointSerializer<SavepointV2> {
-
-	private static final byte NULL_HANDLE = 0;
-	private static final byte BYTE_STREAM_STATE_HANDLE = 1;
-	private static final byte FILE_STREAM_STATE_HANDLE = 2;
-	private static final byte KEY_GROUPS_HANDLE = 3;
-	private static final byte PARTITIONABLE_OPERATOR_STATE_HANDLE = 4;
 
 	public static final SavepointV1Serializer INSTANCE = new SavepointV1Serializer();
 
@@ -219,15 +217,7 @@ public class SavepointV1Serializer implements SavepointSerializer<SavepointV2> {
 		if (stateHandle == null) {
 			dos.writeByte(NULL_HANDLE);
 		} else if (stateHandle instanceof KeyGroupsStateHandle) {
-			KeyGroupsStateHandle keyGroupsStateHandle = (KeyGroupsStateHandle) stateHandle;
-
-			dos.writeByte(KEY_GROUPS_HANDLE);
-			dos.writeInt(keyGroupsStateHandle.getKeyGroupRange().getStartKeyGroup());
-			dos.writeInt(keyGroupsStateHandle.getKeyGroupRange().getNumberOfKeyGroups());
-			for (int keyGroup : keyGroupsStateHandle.getKeyGroupRange()) {
-				dos.writeLong(keyGroupsStateHandle.getOffsetForKeyGroup(keyGroup));
-			}
-			serializeStreamStateHandle(keyGroupsStateHandle.getDelegateStateHandle(), dos);
+			serializeKeyGroupsStateHandle((KeyGroupsStateHandle) stateHandle, dos);
 		} else {
 			throw new IllegalStateException("Unknown KeyedStateHandle type: " + stateHandle.getClass());
 		}
@@ -239,109 +229,10 @@ public class SavepointV1Serializer implements SavepointSerializer<SavepointV2> {
 		if (NULL_HANDLE == type) {
 			return null;
 		} else if (KEY_GROUPS_HANDLE == type) {
-			int startKeyGroup = dis.readInt();
-			int numKeyGroups = dis.readInt();
-			KeyGroupRange keyGroupRange = KeyGroupRange.of(startKeyGroup, startKeyGroup + numKeyGroups - 1);
-			long[] offsets = new long[numKeyGroups];
-			for (int i = 0; i < numKeyGroups; ++i) {
-				offsets[i] = dis.readLong();
-			}
-			KeyGroupRangeOffsets keyGroupRangeOffsets = new KeyGroupRangeOffsets(
-				keyGroupRange, offsets);
-			StreamStateHandle stateHandle = deserializeStreamStateHandle(dis);
-			return new KeyGroupsStateHandle(keyGroupRangeOffsets, stateHandle);
+			return deserializeKeyGroupsHandle(dis);
 		} else {
 			throw new IllegalStateException("Reading invalid KeyedStateHandle, type: " + type);
 		}
-	}
-
-	@VisibleForTesting
-	public static void serializeOperatorStateHandle(
-		OperatorStateHandle stateHandle, DataOutputStream dos) throws IOException {
-
-		if (stateHandle != null) {
-			dos.writeByte(PARTITIONABLE_OPERATOR_STATE_HANDLE);
-			Map<String, OperatorStateHandle.StateMetaInfo> partitionOffsetsMap =
-					stateHandle.getStateNameToPartitionOffsets();
-			dos.writeInt(partitionOffsetsMap.size());
-			for (Map.Entry<String, OperatorStateHandle.StateMetaInfo> entry : partitionOffsetsMap.entrySet()) {
-				dos.writeUTF(entry.getKey());
-
-				OperatorStateHandle.StateMetaInfo stateMetaInfo = entry.getValue();
-
-				int mode = stateMetaInfo.getDistributionMode().ordinal();
-				dos.writeByte(mode);
-
-				long[] offsets = stateMetaInfo.getOffsets();
-				dos.writeInt(offsets.length);
-				for (long offset : offsets) {
-					dos.writeLong(offset);
-				}
-			}
-			serializeStreamStateHandle(stateHandle.getDelegateStateHandle(), dos);
-		} else {
-			dos.writeByte(NULL_HANDLE);
-		}
-	}
-
-	@VisibleForTesting
-	public static OperatorStateHandle deserializeOperatorStateHandle(
-			DataInputStream dis) throws IOException {
-
-		final int type = dis.readByte();
-		if (NULL_HANDLE == type) {
-			return null;
-		} else if (PARTITIONABLE_OPERATOR_STATE_HANDLE == type) {
-			int mapSize = dis.readInt();
-			Map<String, OperatorStateHandle.StateMetaInfo> offsetsMap = new HashMap<>(mapSize);
-			for (int i = 0; i < mapSize; ++i) {
-				String key = dis.readUTF();
-
-				int modeOrdinal = dis.readByte();
-				OperatorStateHandle.Mode mode = OperatorStateHandle.Mode.values()[modeOrdinal];
-
-				long[] offsets = new long[dis.readInt()];
-				for (int j = 0; j < offsets.length; ++j) {
-					offsets[j] = dis.readLong();
-				}
-
-				OperatorStateHandle.StateMetaInfo metaInfo =
-						new OperatorStateHandle.StateMetaInfo(offsets, mode);
-				offsetsMap.put(key, metaInfo);
-			}
-			StreamStateHandle stateHandle = deserializeStreamStateHandle(dis);
-			return new OperatorStreamStateHandle(offsetsMap, stateHandle);
-		} else {
-			throw new IllegalStateException("Reading invalid OperatorStateHandle, type: " + type);
-		}
-	}
-
-	@VisibleForTesting
-	public static void serializeStreamStateHandle(
-			StreamStateHandle stateHandle, DataOutputStream dos) throws IOException {
-
-		if (stateHandle == null) {
-			dos.writeByte(NULL_HANDLE);
-
-		} else if (stateHandle instanceof FileStateHandle) {
-			dos.writeByte(FILE_STREAM_STATE_HANDLE);
-			FileStateHandle fileStateHandle = (FileStateHandle) stateHandle;
-			dos.writeLong(stateHandle.getStateSize());
-			dos.writeUTF(fileStateHandle.getFilePath().toString());
-
-		} else if (stateHandle instanceof ByteStreamStateHandle) {
-			dos.writeByte(BYTE_STREAM_STATE_HANDLE);
-			ByteStreamStateHandle byteStreamStateHandle = (ByteStreamStateHandle) stateHandle;
-			dos.writeUTF(byteStreamStateHandle.getHandleName());
-			byte[] internalData = byteStreamStateHandle.getData();
-			dos.writeInt(internalData.length);
-			dos.write(byteStreamStateHandle.getData());
-
-		} else {
-			throw new IOException("Unknown implementation of StreamStateHandle: " + stateHandle.getClass());
-		}
-
-		dos.flush();
 	}
 
 	@VisibleForTesting
@@ -350,15 +241,9 @@ public class SavepointV1Serializer implements SavepointSerializer<SavepointV2> {
 		if (NULL_HANDLE == type) {
 			return null;
 		} else if (FILE_STREAM_STATE_HANDLE == type) {
-			long size = dis.readLong();
-			String pathString = dis.readUTF();
-			return new FileStateHandle(new Path(pathString), size);
+			return deserializeFileStreamStateHandle(dis);
 		} else if (BYTE_STREAM_STATE_HANDLE == type) {
-			String handleName = dis.readUTF();
-			int numBytes = dis.readInt();
-			byte[] data = new byte[numBytes];
-			dis.readFully(data);
-			return new ByteStreamStateHandle(handleName, data);
+			return deserializeByteStreamStateHandle(dis);
 		} else {
 			throw new IOException("Unknown implementation of StreamStateHandle, code: " + type);
 		}

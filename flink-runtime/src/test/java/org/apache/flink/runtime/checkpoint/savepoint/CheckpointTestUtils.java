@@ -69,6 +69,7 @@ public class CheckpointTestUtils {
 	 */
 	public static Collection<OperatorState> createOperatorStates(
 			Random random,
+			boolean createSegmentStateHandle,
 			int numTaskStates,
 			int numSubtasksPerTask,
 			TemporaryFolder temporaryFolder) throws IOException {
@@ -115,7 +116,7 @@ public class CheckpointTestUtils {
 
 				if (hasKeyedBackend) {
 					if (isIncremental) {
-						if (isSegment) {
+						if (createSegmentStateHandle && isSegment) {
 							keyedStateBackend = createDummyIncrementalSegmentKeyedStateHanlde(random, temporaryFolder);
 						} else {
 							keyedStateBackend = createDummyIncrementalKeyedStateHandle(random);
