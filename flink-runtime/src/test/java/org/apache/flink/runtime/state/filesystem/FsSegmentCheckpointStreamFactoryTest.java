@@ -50,8 +50,7 @@ public class FsSegmentCheckpointStreamFactoryTest {
 			Path.fromLocalFile(temporaryFolder.newFolder()),
 			Path.fromLocalFile(temporaryFolder.newFolder()),
 			writeBufferSize,
-			1024,
-			1);
+			1024);
 
 		CheckpointStreamFactory.CheckpointStateOutputStream outputStream = checkpointStreamFactory.createCheckpointStateOutputStream(1, CheckpointedStateScope.SHARED);
 		// write writeBufferSize + 10 ensure that we create a file for checkpoint 1.

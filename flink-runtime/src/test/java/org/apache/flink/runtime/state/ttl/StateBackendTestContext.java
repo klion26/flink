@@ -29,6 +29,7 @@ import org.apache.flink.runtime.execution.Environment;
 import org.apache.flink.runtime.operators.testutils.DummyEnvironment;
 import org.apache.flink.runtime.state.AbstractKeyedStateBackend;
 import org.apache.flink.runtime.state.CheckpointStreamFactory;
+import org.apache.flink.runtime.state.DefaultSharedStateRegistry;
 import org.apache.flink.runtime.state.KeyGroupRange;
 import org.apache.flink.runtime.state.KeyedStateHandle;
 import org.apache.flink.runtime.state.SharedStateRegistryInterface;
@@ -64,7 +65,7 @@ public abstract class StateBackendTestContext {
 		this.stateBackend = Preconditions.checkNotNull(createStateBackend());
 		this.checkpointOptions = CheckpointOptions.forCheckpointWithDefaultLocation();
 		this.checkpointStreamFactory = createCheckpointStreamFactory();
-		this.sharedStateRegistry = new SharedStateRegistryInterface();
+		this.sharedStateRegistry = new DefaultSharedStateRegistry();
 		this.snapshots = new ArrayList<>();
 	}
 

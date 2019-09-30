@@ -36,6 +36,7 @@ import org.apache.flink.runtime.jobgraph.tasks.CheckpointCoordinatorConfiguratio
 import org.apache.flink.runtime.messages.checkpoint.AcknowledgeCheckpoint;
 import org.apache.flink.runtime.messages.checkpoint.DeclineCheckpoint;
 import org.apache.flink.runtime.state.ChainedStateHandle;
+import org.apache.flink.runtime.state.DefaultSharedStateRegistry;
 import org.apache.flink.runtime.state.IncrementalRemoteKeyedStateHandle;
 import org.apache.flink.runtime.state.KeyGroupRange;
 import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
@@ -169,7 +170,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(1),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			// nothing should be happening
@@ -236,7 +237,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(1),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			// nothing should be happening
@@ -294,7 +295,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(1),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			// nothing should be happening
@@ -763,7 +764,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(2),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			assertEquals(0, coord.getNumberOfPendingCheckpoints());
@@ -900,7 +901,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(10),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			assertEquals(0, coord.getNumberOfPendingCheckpoints());
@@ -1070,7 +1071,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(2),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			// trigger a checkpoint, partially acknowledged
@@ -1154,7 +1155,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(2),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			assertTrue(coord.triggerCheckpoint(timestamp, false));
@@ -1224,7 +1225,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 			new StandaloneCompletedCheckpointStore(1),
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			failureManager);
 
 		assertTrue(coord.triggerCheckpoint(timestamp, false));
@@ -1363,7 +1364,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(2),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			coord.startCheckpointScheduler();
@@ -1458,7 +1459,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(2),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 		try {
@@ -1676,7 +1677,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 			new StandaloneCompletedCheckpointStore(10),
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			failureManager);
 
 		String savepointDir = tmpFolder.newFolder().getAbsolutePath();
@@ -1776,7 +1777,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(2),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			coord.startCheckpointScheduler();
@@ -1856,7 +1857,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(2),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			coord.startCheckpointScheduler();
@@ -1939,7 +1940,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(2),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			coord.startCheckpointScheduler();
@@ -1998,7 +1999,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 			new StandaloneCompletedCheckpointStore(2),
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			failureManager);
 
 		List<CompletableFuture<CompletedCheckpoint>> savepointFutures = new ArrayList<>();
@@ -2058,7 +2059,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 			new StandaloneCompletedCheckpointStore(2),
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			failureManager);
 
 		String savepointDir = tmpFolder.newFolder().getAbsolutePath();
@@ -2127,7 +2128,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 			store,
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			failureManager);
 
 		// trigger the checkpoint
@@ -2248,7 +2249,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 			new StandaloneCompletedCheckpointStore(1),
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			failureManager);
 
 		// trigger the checkpoint
@@ -2383,7 +2384,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				store,
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			//trigger a checkpoint and wait to become a completed checkpoint
@@ -2549,7 +2550,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 			new StandaloneCompletedCheckpointStore(1),
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			failureManager);
 
 		// trigger the checkpoint
@@ -2840,7 +2841,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 			standaloneCompletedCheckpointStore,
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			failureManager);
 
 		coord.restoreLatestCheckpointedState(tasks, false, true);
@@ -2998,7 +2999,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(1),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			assertTrue(coord.triggerCheckpoint(timestamp, false));
@@ -3439,7 +3440,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 			new StandaloneCompletedCheckpointStore(1),
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			failureManager);
 
 		// Periodic
@@ -3666,7 +3667,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 			new StandaloneCompletedCheckpointStore(1),
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			failureManager);
 
 		CheckpointStatsTracker tracker = mock(CheckpointStatsTracker.class);
@@ -3711,7 +3712,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 			store,
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			failureManager);
 
 		store.addCheckpoint(new CompletedCheckpoint(
@@ -3781,7 +3782,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
 				deleteExecutor -> {
-					SharedStateRegistryInterface instance = new SharedStateRegistryInterface(deleteExecutor);
+					SharedStateRegistryInterface instance = new DefaultSharedStateRegistry(deleteExecutor);
 					createdSharedStateRegistries.add(instance);
 					return instance;
 				},
@@ -3987,7 +3988,7 @@ public class CheckpointCoordinatorTest extends TestLogger {
 				new StandaloneCompletedCheckpointStore(1),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 	}
 

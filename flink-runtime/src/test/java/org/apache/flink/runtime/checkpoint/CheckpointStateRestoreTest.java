@@ -29,9 +29,9 @@ import org.apache.flink.runtime.jobgraph.JobVertexID;
 import org.apache.flink.runtime.jobgraph.OperatorID;
 import org.apache.flink.runtime.jobgraph.tasks.CheckpointCoordinatorConfiguration;
 import org.apache.flink.runtime.messages.checkpoint.AcknowledgeCheckpoint;
+import org.apache.flink.runtime.state.DefaultSharedStateRegistry;
 import org.apache.flink.runtime.state.KeyGroupRange;
 import org.apache.flink.runtime.state.KeyedStateHandle;
-import org.apache.flink.runtime.state.SharedStateRegistryInterface;
 import org.apache.flink.runtime.state.memory.MemoryStateBackend;
 import org.apache.flink.runtime.state.testutils.TestCompletedCheckpointStorageLocation;
 import org.apache.flink.util.SerializableObject;
@@ -127,7 +127,7 @@ public class CheckpointStateRestoreTest {
 				new StandaloneCompletedCheckpointStore(1),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			// create ourselves a checkpoint with state
@@ -211,7 +211,7 @@ public class CheckpointStateRestoreTest {
 				new StandaloneCompletedCheckpointStore(1),
 				new MemoryStateBackend(),
 				Executors.directExecutor(),
-				SharedStateRegistryInterface.DEFAULT_FACTORY,
+				DefaultSharedStateRegistry.DEFAULT_FACTORY,
 				failureManager);
 
 			try {
@@ -276,7 +276,7 @@ public class CheckpointStateRestoreTest {
 			new StandaloneCompletedCheckpointStore(1),
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			failureManager);
 
 		// --- (2) Checkpoint misses state for a jobVertex (should work) ---

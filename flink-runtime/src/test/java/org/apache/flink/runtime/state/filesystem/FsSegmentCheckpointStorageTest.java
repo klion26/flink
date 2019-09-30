@@ -59,12 +59,12 @@ public class FsSegmentCheckpointStorageTest extends AbstractFileCheckpointStorag
 
 	@Override
 	protected CheckpointStorage createCheckpointStorage(Path checkpointDir) throws Exception {
-		return new FsSegmentCheckpointStorage(checkpointDir, null, new JobID(), FILE_SIZE_THRESHOLD, WRITE_BUFFER_SIZE, 1);
+		return new FsSegmentCheckpointStorage(checkpointDir, null, new JobID(), FILE_SIZE_THRESHOLD, WRITE_BUFFER_SIZE);
 	}
 
 	@Override
 	protected CheckpointStorage createCheckpointStorageWithSavepointDir(Path checkpointDir, Path savepointDir) throws Exception {
-		return new FsSegmentCheckpointStorage(checkpointDir, savepointDir, new JobID(), FILE_SIZE_THRESHOLD, WRITE_BUFFER_SIZE, 1);
+		return new FsSegmentCheckpointStorage(checkpointDir, savepointDir, new JobID(), FILE_SIZE_THRESHOLD, WRITE_BUFFER_SIZE);
 	}
 
 	// ------------------------------------------------------------------------
@@ -76,7 +76,7 @@ public class FsSegmentCheckpointStorageTest extends AbstractFileCheckpointStorag
 		final Path defaultSavepointDir = Path.fromLocalFile(tmp.newFolder());
 
 		final FsSegmentCheckpointStorage storage = new FsSegmentCheckpointStorage(
-			Path.fromLocalFile(tmp.newFolder()), defaultSavepointDir, new JobID(), FILE_SIZE_THRESHOLD, WRITE_BUFFER_SIZE, 1);
+			Path.fromLocalFile(tmp.newFolder()), defaultSavepointDir, new JobID(), FILE_SIZE_THRESHOLD, WRITE_BUFFER_SIZE);
 
 		final FsCheckpointStorageLocation savepointLocation = (FsCheckpointStorageLocation)
 			storage.initializeLocationForSavepoint(52452L, null);
@@ -95,7 +95,7 @@ public class FsSegmentCheckpointStorageTest extends AbstractFileCheckpointStorag
 		final Path savepointDir = Path.fromLocalFile(tmp.newFolder());
 
 		final FsSegmentCheckpointStorage storage = new FsSegmentCheckpointStorage(
-			Path.fromLocalFile(tmp.newFolder()), null, new JobID(), FILE_SIZE_THRESHOLD, WRITE_BUFFER_SIZE, 1);
+			Path.fromLocalFile(tmp.newFolder()), null, new JobID(), FILE_SIZE_THRESHOLD, WRITE_BUFFER_SIZE);
 
 		final FsCheckpointStorageLocation savepointLocation = (FsCheckpointStorageLocation)
 			storage.initializeLocationForSavepoint(52452L, savepointDir.toString());
@@ -116,7 +116,7 @@ public class FsSegmentCheckpointStorageTest extends AbstractFileCheckpointStorag
 		// we chose a small size threshold here to force the state to disk
 		// because we'll use FsCheckpointStateOutputStream for task owned state.
 		final FsSegmentCheckpointStorage storage = new FsSegmentCheckpointStorage(
-			Path.fromLocalFile(tmp.newFolder()),  null, new JobID(), 10, WRITE_BUFFER_SIZE, 1);
+			Path.fromLocalFile(tmp.newFolder()),  null, new JobID(), 10, WRITE_BUFFER_SIZE);
 
 		final StreamStateHandle stateHandle;
 
@@ -152,8 +152,7 @@ public class FsSegmentCheckpointStorageTest extends AbstractFileCheckpointStorag
 			sharedStateDir,
 			randomTempPath(),
 			CheckpointStorageLocationReference.getDefault(),
-			1024,
-			1);
+			1024);
 
 		assertNotEquals(storageLocation.getCheckpointDirectory(), storageLocation.getSharedStateDirectory());
 
@@ -196,7 +195,7 @@ public class FsSegmentCheckpointStorageTest extends AbstractFileCheckpointStorag
 	@Test
 	public void testStorageLocationDoesNotMkdirs() throws Exception {
 		FsSegmentCheckpointStorage storage = new FsSegmentCheckpointStorage(
-			randomTempPath(), null, new JobID(), FILE_SIZE_THRESHOLD, WRITE_BUFFER_SIZE, 1);
+			randomTempPath(), null, new JobID(), FILE_SIZE_THRESHOLD, WRITE_BUFFER_SIZE);
 
 		File baseDir =  new File(storage.getCheckpointsDirectory().getPath());
 		assertFalse(baseDir.exists());
@@ -217,8 +216,7 @@ public class FsSegmentCheckpointStorageTest extends AbstractFileCheckpointStorag
 			null,
 			new JobID(),
 			FILE_SIZE_THRESHOLD,
-			WRITE_BUFFER_SIZE,
-			1);
+			WRITE_BUFFER_SIZE);
 
 		final FsSegmentCheckpointStorageLocation checkpointStreamFactory =
 			(FsSegmentCheckpointStorageLocation) storage.resolveCheckpointStorageLocation(1L, CheckpointStorageLocationReference.getDefault());

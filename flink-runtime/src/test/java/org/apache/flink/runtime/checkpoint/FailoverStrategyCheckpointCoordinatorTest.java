@@ -31,6 +31,7 @@ import org.apache.flink.runtime.executiongraph.failover.AdaptedRestartPipelinedR
 import org.apache.flink.runtime.executiongraph.failover.FailoverRegion;
 import org.apache.flink.runtime.executiongraph.failover.FailoverStrategy;
 import org.apache.flink.runtime.jobgraph.tasks.CheckpointCoordinatorConfiguration;
+import org.apache.flink.runtime.state.DefaultSharedStateRegistry;
 import org.apache.flink.runtime.state.SharedStateRegistryInterface;
 import org.apache.flink.runtime.state.memory.MemoryStateBackend;
 import org.apache.flink.util.TestLogger;
@@ -91,7 +92,7 @@ public class FailoverStrategyCheckpointCoordinatorTest extends TestLogger {
 			new StandaloneCompletedCheckpointStore(1),
 			new MemoryStateBackend(),
 			Executors.directExecutor(),
-			SharedStateRegistryInterface.DEFAULT_FACTORY,
+			DefaultSharedStateRegistry.DEFAULT_FACTORY,
 			mock(CheckpointFailureManager.class));
 
 		// switch current execution's state to running to allow checkpoint could be triggered.

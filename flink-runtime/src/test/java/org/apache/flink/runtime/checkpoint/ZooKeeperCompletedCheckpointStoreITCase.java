@@ -20,6 +20,7 @@ package org.apache.flink.runtime.checkpoint;
 
 import org.apache.flink.runtime.concurrent.Executors;
 import org.apache.flink.runtime.jobgraph.JobStatus;
+import org.apache.flink.runtime.state.DefaultSharedStateRegistry;
 import org.apache.flink.runtime.state.RetrievableStateHandle;
 import org.apache.flink.runtime.state.SharedStateRegistryInterface;
 import org.apache.flink.runtime.util.ZooKeeperUtils;
@@ -90,7 +91,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 	@Test
 	public void testRecover() throws Exception {
 
-		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
+		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
 		CompletedCheckpointStore checkpoints = createCompletedCheckpoints(3);
 
 		TestCompletedCheckpoint[] expected = new TestCompletedCheckpoint[]{
@@ -114,7 +115,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 
 		// Recover
 		sharedStateRegistry.close();
-		sharedStateRegistry = new SharedStateRegistryInterface();
+		sharedStateRegistry = new DefaultSharedStateRegistry();
 		checkpoints.recover();
 
 		assertEquals(3, ZOOKEEPER.getClient().getChildren().forPath(CHECKPOINT_PATH).size());
@@ -144,7 +145,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 	public void testShutdownDiscardsCheckpoints() throws Exception {
 		CuratorFramework client = ZOOKEEPER.getClient();
 
-		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
+		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
 		CompletedCheckpointStore store = createCompletedCheckpoints(1);
 		TestCompletedCheckpoint checkpoint = createCheckpoint(0, sharedStateRegistry);
 
@@ -171,7 +172,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 	public void testSuspendKeepsCheckpoints() throws Exception {
 		CuratorFramework client = ZOOKEEPER.getClient();
 
-		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
+		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
 		CompletedCheckpointStore store = createCompletedCheckpoints(1);
 		TestCompletedCheckpoint checkpoint = createCheckpoint(0, sharedStateRegistry);
 
@@ -205,7 +206,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 	@Test
 	public void testLatestCheckpointRecovery() throws Exception {
 		final int numCheckpoints = 3;
-		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
+		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
 		CompletedCheckpointStore checkpointStore = createCompletedCheckpoints(numCheckpoints);
 		List<CompletedCheckpoint> checkpoints = new ArrayList<>(numCheckpoints);
 
@@ -239,7 +240,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 		ZooKeeperCompletedCheckpointStore zkCheckpointStore1 = createCompletedCheckpoints(numberOfCheckpoints);
 		ZooKeeperCompletedCheckpointStore zkCheckpointStore2 = createCompletedCheckpoints(numberOfCheckpoints);
 
-		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
+		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
 
 		TestCompletedCheckpoint completedCheckpoint = createCheckpoint(1, sharedStateRegistry);
 
@@ -248,7 +249,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 
 		// recover the checkpoint by a different checkpoint store
 		sharedStateRegistry.close();
-		sharedStateRegistry = new SharedStateRegistryInterface();
+		sharedStateRegistry = new DefaultSharedStateRegistry();
 		zkCheckpointStore2.recover();
 
 		CompletedCheckpoint recoveredCheckpoint = zkCheckpointStore2.getLatestCheckpoint(false);

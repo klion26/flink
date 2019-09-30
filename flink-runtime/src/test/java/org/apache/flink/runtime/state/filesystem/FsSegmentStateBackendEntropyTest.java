@@ -57,7 +57,7 @@ public class FsSegmentStateBackendEntropyTest {
 		final String checkpointDirStr = checkpointDir.toString();
 
 		FsSegmentCheckpointStorage storage = new FsSegmentCheckpointStorage(
-			fs, checkpointDir, checkpointDir, new JobID(), 1024, 1024, 1);
+			fs, checkpointDir, checkpointDir, new JobID(), 1024, 1024);
 
 		FsSegmentCheckpointStorageLocation location = (FsSegmentCheckpointStorageLocation)
 			storage.initializeLocationForCheckpoint(96562);

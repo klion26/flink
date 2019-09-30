@@ -21,6 +21,7 @@ package org.apache.flink.runtime.checkpoint;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.runtime.jobgraph.JobStatus;
 import org.apache.flink.runtime.jobgraph.OperatorID;
+import org.apache.flink.runtime.state.DefaultSharedStateRegistry;
 import org.apache.flink.runtime.state.SharedStateRegistryInterface;
 import org.apache.flink.runtime.state.testutils.TestCompletedCheckpointStorageLocation;
 import org.apache.flink.util.TestLogger;
@@ -66,7 +67,7 @@ public abstract class CompletedCheckpointStoreTest extends TestLogger {
 	 */
 	@Test
 	public void testAddAndGetLatestCheckpoint() throws Exception {
-		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
+		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
 		CompletedCheckpointStore checkpoints = createCompletedCheckpoints(4);
 		
 		// Empty state
@@ -92,7 +93,7 @@ public abstract class CompletedCheckpointStoreTest extends TestLogger {
 	 */
 	@Test
 	public void testAddCheckpointMoreThanMaxRetained() throws Exception {
-		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
+		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
 		CompletedCheckpointStore checkpoints = createCompletedCheckpoints(1);
 
 		TestCompletedCheckpoint[] expected = new TestCompletedCheckpoint[] {
@@ -138,7 +139,7 @@ public abstract class CompletedCheckpointStoreTest extends TestLogger {
 	 */
 	@Test
 	public void testGetAllCheckpoints() throws Exception {
-		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
+		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
 		CompletedCheckpointStore checkpoints = createCompletedCheckpoints(4);
 
 		TestCompletedCheckpoint[] expected = new TestCompletedCheckpoint[] {
@@ -164,7 +165,7 @@ public abstract class CompletedCheckpointStoreTest extends TestLogger {
 	 */
 	@Test
 	public void testDiscardAllCheckpoints() throws Exception {
-		SharedStateRegistryInterface sharedStateRegistry = new SharedStateRegistryInterface();
+		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
 		CompletedCheckpointStore checkpoints = createCompletedCheckpoints(4);
 
 		TestCompletedCheckpoint[] expected = new TestCompletedCheckpoint[] {
