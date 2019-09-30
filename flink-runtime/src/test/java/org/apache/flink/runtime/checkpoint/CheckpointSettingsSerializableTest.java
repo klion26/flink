@@ -46,6 +46,7 @@ import org.apache.flink.runtime.state.KeyedStateHandle;
 import org.apache.flink.runtime.state.KeyGroupRange;
 import org.apache.flink.runtime.state.OperatorStateBackend;
 import org.apache.flink.runtime.state.OperatorStateHandle;
+import org.apache.flink.runtime.state.SharedStateRegistryFactory;
 import org.apache.flink.runtime.state.StateBackend;
 import org.apache.flink.runtime.state.ttl.TtlTimeProvider;
 import org.apache.flink.runtime.testingUtils.TestingUtils;
@@ -61,6 +62,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 
+import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -195,6 +197,11 @@ public class CheckpointSettingsSerializableTest extends TestLogger {
 			@Nonnull Collection<OperatorStateHandle> stateHandles,
 			CloseableRegistry cancelStreamRegistry) throws Exception {
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public SharedStateRegistryFactory getSharedStateRegistryForCurrentStateBackend() {
+			return DEFAULT_FACTORY;
 		}
 	}
 }

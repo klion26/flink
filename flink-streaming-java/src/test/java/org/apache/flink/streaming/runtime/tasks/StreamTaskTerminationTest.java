@@ -62,6 +62,7 @@ import org.apache.flink.runtime.state.KeyGroupRange;
 import org.apache.flink.runtime.state.KeyedStateHandle;
 import org.apache.flink.runtime.state.OperatorStateBackend;
 import org.apache.flink.runtime.state.OperatorStateHandle;
+import org.apache.flink.runtime.state.SharedStateRegistryFactory;
 import org.apache.flink.runtime.state.SnapshotResult;
 import org.apache.flink.runtime.state.StateBackend;
 import org.apache.flink.runtime.state.TestTaskStateManager;
@@ -100,6 +101,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
@@ -301,6 +303,11 @@ public class StreamTaskTerminationTest extends TestLogger {
 				.thenReturn(new FutureTask<>(new BlockingCallable()));
 
 			return operatorStateBackend;
+		}
+
+		@Override
+		public SharedStateRegistryFactory getSharedStateRegistryForCurrentStateBackend() {
+			return DEFAULT_FACTORY;
 		}
 	}
 

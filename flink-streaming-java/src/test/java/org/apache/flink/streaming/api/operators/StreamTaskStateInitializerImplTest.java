@@ -42,6 +42,7 @@ import org.apache.flink.runtime.state.KeyedStateHandle;
 import org.apache.flink.runtime.state.OperatorStateBackend;
 import org.apache.flink.runtime.state.OperatorStateHandle;
 import org.apache.flink.runtime.state.OperatorStreamStateHandle;
+import org.apache.flink.runtime.state.SharedStateRegistryFactory;
 import org.apache.flink.runtime.state.StateBackend;
 import org.apache.flink.runtime.state.StatePartitionStreamProvider;
 import org.apache.flink.runtime.state.TaskLocalStateStore;
@@ -66,6 +67,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Random;
 
+import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -159,6 +161,11 @@ public class StreamTaskStateInitializerImplTest {
 				@Nonnull Collection<OperatorStateHandle> stateHandles,
 				CloseableRegistry cancelStreamRegistry) throws Exception {
 				return mock(OperatorStateBackend.class);
+			}
+
+			@Override
+			public SharedStateRegistryFactory getSharedStateRegistryForCurrentStateBackend() {
+				return DEFAULT_FACTORY;
 			}
 		});
 

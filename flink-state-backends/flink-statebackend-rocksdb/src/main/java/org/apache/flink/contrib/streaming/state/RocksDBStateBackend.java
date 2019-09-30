@@ -40,6 +40,7 @@ import org.apache.flink.runtime.state.KeyedStateHandle;
 import org.apache.flink.runtime.state.LocalRecoveryConfig;
 import org.apache.flink.runtime.state.OperatorStateBackend;
 import org.apache.flink.runtime.state.OperatorStateHandle;
+import org.apache.flink.runtime.state.SharedStateRegistryFactory;
 import org.apache.flink.runtime.state.StateBackend;
 import org.apache.flink.runtime.state.StreamCompressionDecorator;
 import org.apache.flink.runtime.state.filesystem.FsSegmentStateBackend;
@@ -75,6 +76,8 @@ import java.util.UUID;
 import static org.apache.flink.contrib.streaming.state.RocksDBOptions.CHECKPOINT_TRANSFER_THREAD_NUM;
 import static org.apache.flink.contrib.streaming.state.RocksDBOptions.TIMER_SERVICE_FACTORY;
 import static org.apache.flink.contrib.streaming.state.RocksDBOptions.TTL_COMPACT_FILTER_ENABLED;
+import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
+import static org.apache.flink.runtime.state.SharedSegmentStateRegistry.SEGMENT_STATE_FACTORY;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**
@@ -574,6 +577,15 @@ public class RocksDBStateBackend extends AbstractStateBackend implements Configu
 			asyncSnapshots,
 			stateHandles,
 			cancelStreamRegistry).build();
+	}
+
+	@Override
+	public SharedStateRegistryFactory getSharedStateRegistryForCurrentStateBackend() {
+		if (checkpointStreamBackend instanceof FsSegmentStateBackend) {
+			return SEGMENT_STATE_FACTORY;
+		} else {
+			return DEFAULT_FACTORY;
+		}
 	}
 
 	private OptionsFactory configureOptionsFactory(

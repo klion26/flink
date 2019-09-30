@@ -176,4 +176,6 @@ public interface StateBackend extends java.io.Serializable {
 		String operatorIdentifier,
 		@Nonnull Collection<OperatorStateHandle> stateHandles,
 		CloseableRegistry cancelStreamRegistry) throws Exception;
+
+	SharedStateRegistryFactory getSharedStateRegistryForCurrentStateBackend();
 }

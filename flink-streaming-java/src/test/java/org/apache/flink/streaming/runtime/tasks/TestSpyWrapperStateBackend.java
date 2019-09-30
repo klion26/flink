@@ -32,6 +32,7 @@ import org.apache.flink.runtime.state.KeyGroupRange;
 import org.apache.flink.runtime.state.KeyedStateHandle;
 import org.apache.flink.runtime.state.OperatorStateBackend;
 import org.apache.flink.runtime.state.OperatorStateHandle;
+import org.apache.flink.runtime.state.SharedStateRegistryFactory;
 import org.apache.flink.runtime.state.ttl.TtlTimeProvider;
 import org.apache.flink.util.Preconditions;
 
@@ -40,6 +41,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
 
+import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
 import static org.powermock.api.mockito.PowerMockito.spy;
 
 /**
@@ -97,5 +99,10 @@ public class TestSpyWrapperStateBackend extends AbstractStateBackend {
 	@Override
 	public CheckpointStorage createCheckpointStorage(JobID jobId) throws IOException {
 		return spy(delegate.createCheckpointStorage(jobId));
+	}
+
+	@Override
+	public SharedStateRegistryFactory getSharedStateRegistryForCurrentStateBackend() {
+		return DEFAULT_FACTORY;
 	}
 }

@@ -37,6 +37,7 @@ import org.apache.flink.runtime.state.KeyGroupRange;
 import org.apache.flink.runtime.state.KeyedStateHandle;
 import org.apache.flink.runtime.state.OperatorStateBackend;
 import org.apache.flink.runtime.state.OperatorStateHandle;
+import org.apache.flink.runtime.state.SharedStateRegistryFactory;
 import org.apache.flink.runtime.state.StateBackend;
 import org.apache.flink.runtime.state.memory.MemoryBackendCheckpointStorage;
 import org.apache.flink.runtime.state.ttl.TtlTimeProvider;
@@ -51,6 +52,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
 
+import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -135,6 +137,11 @@ public class StateBackendITCase extends AbstractTestBase {
 			CloseableRegistry cancelStreamRegistry) throws Exception {
 
 			throw new SuccessException();
+		}
+
+		@Override
+		public SharedStateRegistryFactory getSharedStateRegistryForCurrentStateBackend() {
+			return DEFAULT_FACTORY;
 		}
 	}
 

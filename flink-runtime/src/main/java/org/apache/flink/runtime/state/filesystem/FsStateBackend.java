@@ -40,6 +40,7 @@ import org.apache.flink.runtime.state.KeyedStateHandle;
 import org.apache.flink.runtime.state.LocalRecoveryConfig;
 import org.apache.flink.runtime.state.OperatorStateBackend;
 import org.apache.flink.runtime.state.OperatorStateHandle;
+import org.apache.flink.runtime.state.SharedStateRegistryFactory;
 import org.apache.flink.runtime.state.TaskStateManager;
 import org.apache.flink.runtime.state.heap.HeapKeyedStateBackendBuilder;
 import org.apache.flink.runtime.state.heap.HeapPriorityQueueSetFactory;
@@ -55,6 +56,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
 
+import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
@@ -542,6 +544,11 @@ public class FsStateBackend extends AbstractFileStateBackend implements Configur
 			isUsingAsynchronousSnapshots(),
 			stateHandles,
 			cancelStreamRegistry).build();
+	}
+
+	@Override
+	public SharedStateRegistryFactory getSharedStateRegistryForCurrentStateBackend() {
+		return DEFAULT_FACTORY;
 	}
 
 	// ------------------------------------------------------------------------

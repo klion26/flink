@@ -600,7 +600,7 @@ public class ExecutionGraph implements AccessExecutionGraph {
 			checkpointStore,
 			checkpointStateBackend,
 			ioExecutor,
-			DefaultSharedStateRegistry.DEFAULT_FACTORY,
+			checkpointStateBackend.getSharedStateRegistryForCurrentStateBackend(),
 			failureManager);
 
 		// register the master hooks on the checkpoint coordinator
