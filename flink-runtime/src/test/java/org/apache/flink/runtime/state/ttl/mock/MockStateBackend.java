@@ -47,7 +47,7 @@ import javax.annotation.Nullable;
 
 import java.util.Collection;
 
-import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
+import static org.apache.flink.runtime.state.SharedStateRegistry.DEFAULT_FACTORY;
 
 /** mack state backend. */
 public class MockStateBackend extends AbstractStateBackend {

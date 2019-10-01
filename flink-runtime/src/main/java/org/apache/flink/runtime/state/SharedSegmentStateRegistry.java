@@ -19,6 +19,7 @@
 package org.apache.flink.runtime.state;
 
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.runtime.concurrent.Executors;
 import org.apache.flink.runtime.state.filesystem.FsSegmentStateHandle;
@@ -34,22 +35,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /**
  * Used for {@link org.apache.flink.runtime.state.filesystem.FsSegmentStateBackend}.
  */
-public class SharedSegmentStateRegistry implements SharedStateRegistryInterface {
+public class SharedSegmentStateRegistry extends SharedStateRegistry {
 
-	private static final Logger LOG = LoggerFactory.getLogger(DefaultSharedStateRegistry.class);
+	private static final Logger LOG = LoggerFactory.getLogger(SharedSegmentStateRegistry.class);
 
 	/** A singleton object for the default implementation of a {@link SharedStateRegistryFactory} */
-	public static final SharedStateRegistryFactory SEGMENT_STATE_FACTORY = DefaultSharedStateRegistry::new;
-
-	/** All registered state objects by an artificial key */
-	private final Map<SharedStateRegistryKey, SharedStateEntry> registeredStates;
+	public static final SharedStateRegistryFactory SEGMENT_STATE_FACTORY = SharedSegmentStateRegistry::new;
 
 	/**
 	 * Used in {@link org.apache.flink.runtime.state.filesystem.FsSegmentStateBackend}.
@@ -62,23 +59,15 @@ public class SharedSegmentStateRegistry implements SharedStateRegistryInterface 
 	 * Please see comments of {@link #cleanUpAfterEveryCheckpoint()} ()} for more detail.*/
 	private Set<String> underlyingFileOfDuplicatedStatehandles;
 
-	/** This flag indicates whether or not the registry is open or if close() was called */
-	private boolean open;
-
-	/** Executor for async state deletion */
-	private final Executor asyncDisposalExecutor;
-
 	/** Default uses direct executor to delete unreferenced state */
 	public SharedSegmentStateRegistry() {
 		this(Executors.directExecutor());
 	}
 
 	public SharedSegmentStateRegistry(Executor asyncDisposalExecutor) {
-		this.registeredStates = new HashMap<>();
+		super(asyncDisposalExecutor);
 		this.fileRefCounts = new HashMap<>();
 		this.underlyingFileOfDuplicatedStatehandles = new HashSet<>();
-		this.asyncDisposalExecutor = Preconditions.checkNotNull(asyncDisposalExecutor);
-		this.open = true;
 	}
 
 	/**
@@ -113,28 +102,9 @@ public class SharedSegmentStateRegistry implements SharedStateRegistryInterface 
 			entry = registeredStates.get(registrationKey);
 
 			if (entry == null) {
-
-				// Additional check that should never fail, because only state handles that are not placeholders should
-				// ever be inserted to the registry.
-				Preconditions.checkState(!isPlaceholder(state), "Attempt to reference unknown state: " + registrationKey);
-
-				entry = new SharedStateEntry(state);
-				registeredStates.put(registrationKey, entry);
+				entry = registerUnduplicatedState(registrationKey, state);
 			} else {
-				// delete if this is a real duplicate
-				if (!Objects.equals(state, entry.getStateHandle())) {
-					scheduledStateDeletion = state;
-					// increase file reference of scheduledStateDeletetion so that
-					// we can unify the operation in descFileRefCountForSegmentStateHandle
-					increaseFileRefCountForSegmentStateHandle(scheduledStateDeletion);
-					descFileRefCountForSegmentStateHandle(scheduledStateDeletion, false);
-					LOG.trace("Identified duplicate state registration under key {}. New state {} was determined to " +
-							"be an unnecessary copy of existing state {} and will be dropped.",
-						registrationKey,
-						state,
-						entry.getStateHandle());
-				}
-				entry.increaseReferenceCount();
+				scheduledStateDeletion = registerDuplicatedState(registrationKey, state, entry);
 			}
 			increaseFileRefCountForSegmentStateHandle(entry.getStateHandle());
 		}
@@ -163,23 +133,10 @@ public class SharedSegmentStateRegistry implements SharedStateRegistryInterface 
 		SharedStateEntry entry;
 
 		synchronized (registeredStates) {
-
-			entry = registeredStates.get(registrationKey);
-
-			Preconditions.checkState(entry != null,
-				"Cannot unregister a state that is not registered.");
-
-			entry.decreaseReferenceCount();
-
-			// Remove the state from the registry when it's not referenced any more.
-			if (entry.getReferenceCount() <= 0) {
-				registeredStates.remove(registrationKey);
-				scheduledStateDeletion = entry.getStateHandle();
-				result = new Result(null, 0);
-			} else {
-				scheduledStateDeletion = null;
-				result = new Result(entry);
-			}
+			Tuple3<Result, StreamStateHandle, SharedStateEntry> tuple = doUnregisterRef(registrationKey);
+			result = tuple.f0;
+			scheduledStateDeletion = tuple.f1;
+			entry = tuple.f2;
 			descFileRefCountForSegmentStateHandle(entry.getStateHandle(), true);
 		}
 
@@ -188,30 +145,31 @@ public class SharedSegmentStateRegistry implements SharedStateRegistryInterface 
 		return result;
 	}
 
-	/**
-	 * Register given shared states in the registry.
-	 *
-	 * @param stateHandles The shared states to register.
-	 */
-	@Override
-	public void registerAll(Iterable<? extends CompositeStateHandle> stateHandles) {
-
-		if (stateHandles == null) {
-			return;
-		}
-
-		synchronized (registeredStates) {
-			for (CompositeStateHandle stateHandle : stateHandles) {
-				stateHandle.registerSharedStates(this);
-			}
-		}
-	}
-
 	private void increaseFileRefCountForSegmentStateHandle(StreamStateHandle handle) {
 		checkArgument(handle instanceof FsSegmentStateHandle, "SharedSegmentStateRegistry only support FsSegmentStateHandle, passed in " + handle.getClass().getSimpleName());
 
 		String filePath = ((FsSegmentStateHandle) handle).getFilePath().toUri().toString();
-		fileRefCounts.put(filePath, fileRefCounts.computeIfAbsent(filePath, (nothing) -> 0) + 1);
+		fileRefCounts.put(filePath, fileRefCounts.getOrDefault(filePath, 0) + 1);
+	}
+
+	@Override
+	protected StreamStateHandle registerDuplicatedState(SharedStateRegistryKey registrationKey, StreamStateHandle state, SharedStateEntry entry) {
+		StreamStateHandle scheduledStateDeletion = null;
+		// delete if this is a real duplicate
+		if (!Objects.equals(state, entry.getStateHandle())) {
+			scheduledStateDeletion = state;
+			// increase file reference of scheduledStateDeletetion so that
+			// we can unify the operation in descFileRefCountForSegmentStateHandle
+			increaseFileRefCountForSegmentStateHandle(scheduledStateDeletion);
+			descFileRefCountForSegmentStateHandle(scheduledStateDeletion, false);
+			LOG.trace("Identified duplicate state registration under key {}. New state {} was determined to " +
+					"be an unnecessary copy of existing state {} and will be dropped.",
+				registrationKey,
+				state,
+				entry.getStateHandle());
+		}
+		entry.increaseReferenceCount();
+		return scheduledStateDeletion;
 	}
 
 	/**
@@ -283,35 +241,6 @@ public class SharedSegmentStateRegistry implements SharedStateRegistryInterface 
 			}
 		}
 		underlyingFileOfDuplicatedStatehandles.clear();
-	}
-
-	private void scheduleAsyncDelete(StreamStateHandle streamStateHandle) {
-		// We do the small optimization to not issue discards for placeholders, which are NOPs.
-		if (streamStateHandle != null && !isPlaceholder(streamStateHandle)) {
-			LOG.trace("Scheduled delete of state handle {}.", streamStateHandle);
-			AsyncDisposalRunnable asyncDisposalRunnable = new AsyncDisposalRunnable(streamStateHandle);
-			try {
-				asyncDisposalExecutor.execute(asyncDisposalRunnable);
-			} catch (RejectedExecutionException ex) {
-				// TODO This is a temporary fix for a problem during ZooKeeperCompletedCheckpointStore#shutdown:
-				// Disposal is issued in another async thread and the shutdown proceeds to close the I/O Executor pool.
-				// This leads to RejectedExecutionException once the async deletes are triggered by ZK. We need to
-				// wait for all pending ZK deletes before closing the I/O Executor pool. We can simply call #run()
-				// because we are already in the async ZK thread that disposes the handles.
-				asyncDisposalRunnable.run();
-			}
-		}
-	}
-
-	private boolean isPlaceholder(StreamStateHandle stateHandle) {
-		return stateHandle instanceof PlaceholderStreamStateHandle;
-	}
-
-	@Override
-	public void close() {
-		synchronized (registeredStates) {
-			open = false;
-		}
 	}
 }
 

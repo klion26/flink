@@ -133,7 +133,7 @@ public abstract class StateBackendMigrationTestBase<B extends AbstractStateBacke
 			ValueStateDescriptor<TestType> newAccessDescriptorAfterRestore) throws Exception {
 
 		CheckpointStreamFactory streamFactory = createStreamFactory();
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 
 		AbstractKeyedStateBackend<Integer> backend = createKeyedBackend(IntSerializer.INSTANCE);
 
@@ -241,7 +241,7 @@ public abstract class StateBackendMigrationTestBase<B extends AbstractStateBacke
 			ListStateDescriptor<TestType> newAccessDescriptorAfterRestore) throws Exception {
 
 		CheckpointStreamFactory streamFactory = createStreamFactory();
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 
 		AbstractKeyedStateBackend<Integer> backend = createKeyedBackend(IntSerializer.INSTANCE);
 
@@ -384,7 +384,7 @@ public abstract class StateBackendMigrationTestBase<B extends AbstractStateBacke
 		MapStateDescriptor<Integer, TestType> initialAccessDescriptor,
 		MapStateDescriptor<Integer, TestType> newAccessDescriptorAfterRestore) throws Exception {
 		CheckpointStreamFactory streamFactory = createStreamFactory();
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 
 		AbstractKeyedStateBackend<Integer> backend = createKeyedBackend(IntSerializer.INSTANCE);
 
@@ -479,7 +479,7 @@ public abstract class StateBackendMigrationTestBase<B extends AbstractStateBacke
 	@Test
 	public void testPriorityQueueStateCreationFailsIfNewSerializerIsNotCompatible() throws Exception {
 		CheckpointStreamFactory streamFactory = createStreamFactory();
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 
 		AbstractKeyedStateBackend<Integer> backend = createKeyedBackend(IntSerializer.INSTANCE);
 
@@ -552,7 +552,7 @@ public abstract class StateBackendMigrationTestBase<B extends AbstractStateBacke
 			TypeSerializer<TestType> newKeySerializer) throws Exception {
 
 		CheckpointStreamFactory streamFactory = createStreamFactory();
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 
 		AbstractKeyedStateBackend<TestType> backend = createKeyedBackend(initialKeySerializer);
 
@@ -637,7 +637,7 @@ public abstract class StateBackendMigrationTestBase<B extends AbstractStateBacke
 			TypeSerializer<TestType> newNamespaceSerializerAfterRestore) throws Exception {
 
 		CheckpointStreamFactory streamFactory = createStreamFactory();
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 
 		AbstractKeyedStateBackend<Integer> backend = createKeyedBackend(IntSerializer.INSTANCE);
 
@@ -1237,7 +1237,7 @@ public abstract class StateBackendMigrationTestBase<B extends AbstractStateBacke
 
 	private KeyedStateHandle runSnapshot(
 		RunnableFuture<SnapshotResult<KeyedStateHandle>> snapshotRunnableFuture,
-		SharedStateRegistryInterface sharedStateRegistry) throws Exception {
+		SharedStateRegistry sharedStateRegistry) throws Exception {
 
 		if (!snapshotRunnableFuture.isDone()) {
 			snapshotRunnableFuture.run();

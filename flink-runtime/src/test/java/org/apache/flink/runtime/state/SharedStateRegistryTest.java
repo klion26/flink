@@ -20,20 +20,10 @@
 package org.apache.flink.runtime.state;
 
 import org.apache.flink.core.fs.FSDataInputStream;
-import org.apache.flink.core.fs.FileSystem;
-import org.apache.flink.core.fs.Path;
-import org.apache.flink.core.fs.local.LocalFileSystem;
-import org.apache.flink.runtime.state.filesystem.FsSegmentStateHandle;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Map;
 
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertEquals;
@@ -48,7 +38,7 @@ public class SharedStateRegistryTest {
 	@Test
 	public void testRegistryNormal() {
 
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 
 		// register one state
 		TestSharedState firstState = new TestSharedState("first");
@@ -98,7 +88,7 @@ public class SharedStateRegistryTest {
 	 */
 	@Test(expected = IllegalStateException.class)
 	public void testUnregisterWithUnexistedKey() {
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 		sharedStateRegistry.unregisterReference(new SharedStateRegistryKey("non-existent"));
 	}
 

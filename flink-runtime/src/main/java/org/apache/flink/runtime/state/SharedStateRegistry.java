@@ -18,6 +18,7 @@
 
 package org.apache.flink.runtime.state;
 
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.runtime.concurrent.Executors;
 import org.apache.flink.util.Preconditions;
 
@@ -39,28 +40,28 @@ import java.util.concurrent.RejectedExecutionException;
  * maintain the reference count of {@link StreamStateHandle}s by a key that (logically) identifies
  * them.
  */
-public class DefaultSharedStateRegistry implements SharedStateRegistryInterface {
+public class SharedStateRegistry implements AutoCloseable {
 
-	private static final Logger LOG = LoggerFactory.getLogger(DefaultSharedStateRegistry.class);
+	private static final Logger LOG = LoggerFactory.getLogger(SharedStateRegistry.class);
 
 	/** A singleton object for the default implementation of a {@link SharedStateRegistryFactory} */
-	public static final SharedStateRegistryFactory DEFAULT_FACTORY = DefaultSharedStateRegistry::new;
+	public static final SharedStateRegistryFactory DEFAULT_FACTORY = SharedStateRegistry::new;
 
 	/** All registered state objects by an artificial key */
-	private final Map<SharedStateRegistryKey, SharedStateEntry> registeredStates;
+	protected final Map<SharedStateRegistryKey, SharedStateEntry> registeredStates;
 
 	/** This flag indicates whether or not the registry is open or if close() was called */
-	private boolean open;
+	protected boolean open;
 
 	/** Executor for async state deletion */
-	private final Executor asyncDisposalExecutor;
+	protected final Executor asyncDisposalExecutor;
 
 	/** Default uses direct executor to delete unreferenced state */
-	public DefaultSharedStateRegistry() {
+	public SharedStateRegistry() {
 		this(Executors.directExecutor());
 	}
 
-	public DefaultSharedStateRegistry(Executor asyncDisposalExecutor) {
+	public SharedStateRegistry(Executor asyncDisposalExecutor) {
 		this.registeredStates = new HashMap<>();
 		this.asyncDisposalExecutor = Preconditions.checkNotNull(asyncDisposalExecutor);
 		this.open = true;
@@ -82,7 +83,6 @@ public class DefaultSharedStateRegistry implements SharedStateRegistryInterface 
 	 * @return the result of this registration request, consisting of the state handle that is
 	 * registered under the key by the end of the operation and its current reference count.
 	 */
-	@Override
 	public Result registerReference(SharedStateRegistryKey registrationKey, StreamStateHandle state) {
 
 		Preconditions.checkNotNull(state);
@@ -97,24 +97,9 @@ public class DefaultSharedStateRegistry implements SharedStateRegistryInterface 
 			entry = registeredStates.get(registrationKey);
 
 			if (entry == null) {
-
-				// Additional check that should never fail, because only state handles that are not placeholders should
-				// ever be inserted to the registry.
-				Preconditions.checkState(!isPlaceholder(state), "Attempt to reference unknown state: " + registrationKey);
-
-				entry = new SharedStateEntry(state);
-				registeredStates.put(registrationKey, entry);
+				entry = registerUnduplicatedState(registrationKey, state);
 			} else {
-				// delete if this is a real duplicate
-				if (!Objects.equals(state, entry.getStateHandle())) {
-					scheduledStateDeletion = state;
-					LOG.trace("Identified duplicate state registration under key {}. New state {} was determined to " +
-							"be an unnecessary copy of existing state {} and will be dropped.",
-						registrationKey,
-						state,
-						entry.getStateHandle());
-				}
-				entry.increaseReferenceCount();
+				scheduledStateDeletion = registerDuplicatedState(registrationKey, state, entry);
 			}
 		}
 
@@ -132,7 +117,6 @@ public class DefaultSharedStateRegistry implements SharedStateRegistryInterface 
 	 * and the state handle, or null if the state handle was deleted through this request. Returns null if the registry
 	 * was previously closed.
 	 */
-	@Override
 	public Result unregisterReference(SharedStateRegistryKey registrationKey) {
 
 		Preconditions.checkNotNull(registrationKey);
@@ -142,23 +126,10 @@ public class DefaultSharedStateRegistry implements SharedStateRegistryInterface 
 		SharedStateEntry entry;
 
 		synchronized (registeredStates) {
-
-			entry = registeredStates.get(registrationKey);
-
-			Preconditions.checkState(entry != null,
-				"Cannot unregister a state that is not registered.");
-
-			entry.decreaseReferenceCount();
-
-			// Remove the state from the registry when it's not referenced any more.
-			if (entry.getReferenceCount() <= 0) {
-				registeredStates.remove(registrationKey);
-				scheduledStateDeletion = entry.getStateHandle();
-				result = new Result(null, 0);
-			} else {
-				scheduledStateDeletion = null;
-				result = new Result(entry);
-			}
+			Tuple3<Result, StreamStateHandle, SharedStateEntry> tuple = doUnregisterRef(registrationKey);
+			result = tuple.f0;
+			scheduledStateDeletion = tuple.f1;
+			entry = tuple.f2;
 		}
 
 		LOG.trace("Unregistered shared state {} under key {}.", entry, registrationKey);
@@ -171,7 +142,6 @@ public class DefaultSharedStateRegistry implements SharedStateRegistryInterface 
 	 *
 	 * @param stateHandles The shared states to register.
 	 */
-	@Override
 	public void registerAll(Iterable<? extends CompositeStateHandle> stateHandles) {
 
 		if (stateHandles == null) {
@@ -194,12 +164,59 @@ public class DefaultSharedStateRegistry implements SharedStateRegistryInterface 
 		}
 	}
 
-	@Override
 	public void cleanUpAfterEveryCheckpoint() {
 		// need to to do nothing.
 	}
 
-	private void scheduleAsyncDelete(StreamStateHandle streamStateHandle) {
+	protected Tuple3<Result, StreamStateHandle, SharedStateEntry> doUnregisterRef(SharedStateRegistryKey registrationKey) {
+		final SharedStateEntry entry = registeredStates.get(registrationKey);
+
+		final StreamStateHandle scheduledStateDeletion;
+		final Result result;
+
+		Preconditions.checkState(entry != null,
+			"Cannot unregister a state that is not registered.");
+
+		entry.decreaseReferenceCount();
+
+		// Remove the state from the registry when it's not referenced any more.
+		if (entry.getReferenceCount() <= 0) {
+			registeredStates.remove(registrationKey);
+			scheduledStateDeletion = entry.getStateHandle();
+			result = new Result(null, 0);
+		} else {
+			scheduledStateDeletion = null;
+			result = new Result(entry);
+		}
+		return Tuple3.of(result, scheduledStateDeletion, entry);
+	}
+
+	protected SharedStateEntry registerUnduplicatedState(SharedStateRegistryKey registrationKey, StreamStateHandle state) {
+		// Additional check that should never fail, because only state handles that are not placeholders should
+		// ever be inserted to the registry.
+		Preconditions.checkState(!isPlaceholder(state), "Attempt to reference unknown state: " + registrationKey);
+
+		SharedStateEntry entry = new SharedStateEntry(state);
+		registeredStates.put(registrationKey, entry);
+		return entry;
+	}
+
+	protected StreamStateHandle registerDuplicatedState(SharedStateRegistryKey registrationKey, StreamStateHandle state, SharedStateEntry entry) {
+		StreamStateHandle scheduledStateDeletion = null;
+		// delete if this is a real duplicate
+		if (!Objects.equals(state, entry.getStateHandle())) {
+			scheduledStateDeletion = state;
+			LOG.trace("Identified duplicate state registration under key {}. New state {} was determined to " +
+					"be an unnecessary copy of existing state {} and will be dropped.",
+				registrationKey,
+				state,
+				entry.getStateHandle());
+		}
+		entry.increaseReferenceCount();
+		return scheduledStateDeletion;
+	}
+
+	protected void scheduleAsyncDelete(StreamStateHandle streamStateHandle) {
 		// We do the small optimization to not issue discards for placeholders, which are NOPs.
 		if (streamStateHandle != null && !isPlaceholder(streamStateHandle)) {
 			LOG.trace("Scheduled delete of state handle {}.", streamStateHandle);
@@ -217,7 +234,7 @@ public class DefaultSharedStateRegistry implements SharedStateRegistryInterface 
 		}
 	}
 
-	private boolean isPlaceholder(StreamStateHandle stateHandle) {
+	protected boolean isPlaceholder(StreamStateHandle stateHandle) {
 		return stateHandle instanceof PlaceholderStreamStateHandle;
 	}
 

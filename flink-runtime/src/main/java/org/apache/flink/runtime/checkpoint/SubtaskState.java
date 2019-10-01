@@ -22,7 +22,7 @@ import org.apache.flink.runtime.state.ChainedStateHandle;
 import org.apache.flink.runtime.state.CompositeStateHandle;
 import org.apache.flink.runtime.state.OperatorStateHandle;
 import org.apache.flink.runtime.state.KeyedStateHandle;
-import org.apache.flink.runtime.state.SharedStateRegistryInterface;
+import org.apache.flink.runtime.state.SharedStateRegistry;
 import org.apache.flink.runtime.state.StateObject;
 import org.apache.flink.runtime.state.StateUtil;
 
@@ -127,7 +127,7 @@ public class SubtaskState implements CompositeStateHandle {
 	}
 
 	@Override
-	public void registerSharedStates(SharedStateRegistryInterface sharedStateRegistry) {
+	public void registerSharedStates(SharedStateRegistry sharedStateRegistry) {
 		if (managedKeyedState != null) {
 			managedKeyedState.registerSharedStates(sharedStateRegistry);
 		}

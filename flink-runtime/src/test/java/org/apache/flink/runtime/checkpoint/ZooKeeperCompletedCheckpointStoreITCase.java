@@ -20,9 +20,9 @@ package org.apache.flink.runtime.checkpoint;
 
 import org.apache.flink.runtime.concurrent.Executors;
 import org.apache.flink.runtime.jobgraph.JobStatus;
-import org.apache.flink.runtime.state.DefaultSharedStateRegistry;
+import org.apache.flink.runtime.state.SharedStateRegistry;
 import org.apache.flink.runtime.state.RetrievableStateHandle;
-import org.apache.flink.runtime.state.SharedStateRegistryInterface;
+import org.apache.flink.runtime.state.SharedStateRegistry;
 import org.apache.flink.runtime.util.ZooKeeperUtils;
 import org.apache.flink.runtime.zookeeper.RetrievableStateStorageHelper;
 import org.apache.flink.runtime.zookeeper.ZooKeeperStateHandleStore;
@@ -91,7 +91,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 	@Test
 	public void testRecover() throws Exception {
 
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 		CompletedCheckpointStore checkpoints = createCompletedCheckpoints(3);
 
 		TestCompletedCheckpoint[] expected = new TestCompletedCheckpoint[]{
@@ -115,7 +115,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 
 		// Recover
 		sharedStateRegistry.close();
-		sharedStateRegistry = new DefaultSharedStateRegistry();
+		sharedStateRegistry = new SharedStateRegistry();
 		checkpoints.recover();
 
 		assertEquals(3, ZOOKEEPER.getClient().getChildren().forPath(CHECKPOINT_PATH).size());
@@ -145,7 +145,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 	public void testShutdownDiscardsCheckpoints() throws Exception {
 		CuratorFramework client = ZOOKEEPER.getClient();
 
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 		CompletedCheckpointStore store = createCompletedCheckpoints(1);
 		TestCompletedCheckpoint checkpoint = createCheckpoint(0, sharedStateRegistry);
 
@@ -172,7 +172,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 	public void testSuspendKeepsCheckpoints() throws Exception {
 		CuratorFramework client = ZOOKEEPER.getClient();
 
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 		CompletedCheckpointStore store = createCompletedCheckpoints(1);
 		TestCompletedCheckpoint checkpoint = createCheckpoint(0, sharedStateRegistry);
 
@@ -206,7 +206,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 	@Test
 	public void testLatestCheckpointRecovery() throws Exception {
 		final int numCheckpoints = 3;
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 		CompletedCheckpointStore checkpointStore = createCompletedCheckpoints(numCheckpoints);
 		List<CompletedCheckpoint> checkpoints = new ArrayList<>(numCheckpoints);
 
@@ -240,7 +240,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 		ZooKeeperCompletedCheckpointStore zkCheckpointStore1 = createCompletedCheckpoints(numberOfCheckpoints);
 		ZooKeeperCompletedCheckpointStore zkCheckpointStore2 = createCompletedCheckpoints(numberOfCheckpoints);
 
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 
 		TestCompletedCheckpoint completedCheckpoint = createCheckpoint(1, sharedStateRegistry);
 
@@ -249,7 +249,7 @@ public class ZooKeeperCompletedCheckpointStoreITCase extends CompletedCheckpoint
 
 		// recover the checkpoint by a different checkpoint store
 		sharedStateRegistry.close();
-		sharedStateRegistry = new DefaultSharedStateRegistry();
+		sharedStateRegistry = new SharedStateRegistry();
 		zkCheckpointStore2.recover();
 
 		CompletedCheckpoint recoveredCheckpoint = zkCheckpointStore2.getLatestCheckpoint(false);

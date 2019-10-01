@@ -56,7 +56,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
 
-import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
+import static org.apache.flink.runtime.state.SharedStateRegistry.DEFAULT_FACTORY;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 

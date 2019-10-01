@@ -67,7 +67,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Random;
 
-import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
+import static org.apache.flink.runtime.state.SharedStateRegistry.DEFAULT_FACTORY;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;

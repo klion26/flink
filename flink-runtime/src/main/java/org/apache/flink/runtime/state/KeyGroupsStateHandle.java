@@ -93,7 +93,7 @@ public class KeyGroupsStateHandle implements StreamStateHandle, KeyedStateHandle
 	}
 
 	@Override
-	public void registerSharedStates(SharedStateRegistryInterface stateRegistry) {
+	public void registerSharedStates(SharedStateRegistry stateRegistry) {
 		// No shared states
 	}
 

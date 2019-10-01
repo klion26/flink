@@ -23,7 +23,7 @@ import org.apache.flink.util.StringBasedID;
 
 /**
  * This class represents a key that uniquely identifies (on a logical level) state handles for
- * registration in the {@link SharedStateRegistryInterface}. Two files which should logically
+ * registration in the {@link SharedStateRegistry}. Two files which should logically
  * be the same should have the same {@link SharedStateRegistryKey}. The meaning of logical
  * equivalence is up to the application.
  */

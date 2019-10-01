@@ -101,7 +101,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
+import static org.apache.flink.runtime.state.SharedStateRegistry.DEFAULT_FACTORY;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;

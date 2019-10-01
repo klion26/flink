@@ -38,7 +38,7 @@ import java.util.UUID;
  * completed checkpoint. These files can be referenced by succeeding checkpoints if the
  * checkpoint succeeds to complete. </li>
  * <li> Referenced shared state which includes the shared files materialized in previous
- * checkpoints. Until we this is registered to a {@link SharedStateRegistryInterface}, all referenced
+ * checkpoints. Until we this is registered to a {@link SharedStateRegistry}, all referenced
  * shared state handles are only placeholders, so that we do not send state handles twice
  * from which we know that they already exist on the checkpoint coordinator.</li>
  * <li> Private state which includes all other files, typically mutable, that cannot be shared by
@@ -47,7 +47,7 @@ import java.util.UUID;
  * </ul>
  *
  * When this should become a completed checkpoint on the checkpoint coordinator, it must first be
- * registered with a {@link SharedStateRegistryInterface}, so that all placeholder state handles to
+ * registered with a {@link SharedStateRegistry}, so that all placeholder state handles to
  * previously existing state are replaced with the originals.
  *
  * IMPORTANT: This class currently overrides equals and hash code only for testing purposes. They
@@ -62,7 +62,7 @@ public class IncrementalRemoteKeyedStateHandle implements IncrementalKeyedStateH
 
 	/**
 	 * UUID to identify the backend which created this state handle. This is in creating the key for the
-	 * {@link SharedStateRegistryInterface}.
+	 * {@link SharedStateRegistry}.
 	 */
 	private final UUID backendIdentifier;
 
@@ -92,14 +92,14 @@ public class IncrementalRemoteKeyedStateHandle implements IncrementalKeyedStateH
 	private final StreamStateHandle metaStateHandle;
 
 	/**
-	 * Once the shared states are registered, it is the {@link SharedStateRegistryInterface}'s
+	 * Once the shared states are registered, it is the {@link SharedStateRegistry}'s
 	 * responsibility to cleanup those shared states.
 	 * But in the cases where the state handle is discarded before performing the registration,
 	 * the handle should delete all the shared states created by it.
 	 *
 	 * This variable is not null iff the handles was registered.
 	 */
-	private transient SharedStateRegistryInterface sharedStateRegistry;
+	private transient SharedStateRegistry sharedStateRegistry;
 
 	public IncrementalRemoteKeyedStateHandle(
 		UUID backendIdentifier,
@@ -147,7 +147,7 @@ public class IncrementalRemoteKeyedStateHandle implements IncrementalKeyedStateH
 		return backendIdentifier;
 	}
 
-	public SharedStateRegistryInterface getSharedStateRegistry() {
+	public SharedStateRegistry getSharedStateRegistry() {
 		return sharedStateRegistry;
 	}
 
@@ -160,7 +160,7 @@ public class IncrementalRemoteKeyedStateHandle implements IncrementalKeyedStateH
 	@Override
 	public void discardState() throws Exception {
 
-		SharedStateRegistryInterface registry = this.sharedStateRegistry;
+		SharedStateRegistry registry = this.sharedStateRegistry;
 		final boolean isRegistered = (registry != null);
 
 		LOG.trace("Discarding IncrementalRemoteKeyedStateHandle (registered = {}) for checkpoint {} from backend with id {}.",
@@ -216,7 +216,7 @@ public class IncrementalRemoteKeyedStateHandle implements IncrementalKeyedStateH
 	}
 
 	@Override
-	public void registerSharedStates(SharedStateRegistryInterface stateRegistry) {
+	public void registerSharedStates(SharedStateRegistry stateRegistry) {
 
 		// This is a quick check to avoid that we register twice with the same registry. However, the code allows to
 		// register again with a different registry. The implication is that ownership is transferred to this new

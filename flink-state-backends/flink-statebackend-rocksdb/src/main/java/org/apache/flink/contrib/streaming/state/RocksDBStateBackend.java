@@ -76,7 +76,7 @@ import java.util.UUID;
 import static org.apache.flink.contrib.streaming.state.RocksDBOptions.CHECKPOINT_TRANSFER_THREAD_NUM;
 import static org.apache.flink.contrib.streaming.state.RocksDBOptions.TIMER_SERVICE_FACTORY;
 import static org.apache.flink.contrib.streaming.state.RocksDBOptions.TTL_COMPACT_FILTER_ENABLED;
-import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
+import static org.apache.flink.runtime.state.SharedStateRegistry.DEFAULT_FACTORY;
 import static org.apache.flink.runtime.state.SharedSegmentStateRegistry.SEGMENT_STATE_FACTORY;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 

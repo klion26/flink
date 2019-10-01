@@ -71,7 +71,7 @@ public class DirectoryKeyedStateHandle implements KeyedStateHandle {
 	}
 
 	@Override
-	public void registerSharedStates(SharedStateRegistryInterface stateRegistry) {
+	public void registerSharedStates(SharedStateRegistry stateRegistry) {
 		// Nothing to do, this is for local use only.
 	}
 

@@ -52,7 +52,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 
-import static org.apache.flink.runtime.state.DefaultSharedStateRegistry.DEFAULT_FACTORY;
+import static org.apache.flink.runtime.state.SharedStateRegistry.DEFAULT_FACTORY;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /**

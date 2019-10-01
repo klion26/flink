@@ -63,7 +63,7 @@ public class SharedSegmentStateRegistryTest {
 		FsSegmentStateHandle handle2 = new FsSegmentStateHandle(firstPath, 3, 8);
 		FsSegmentStateHandle handle3 = new FsSegmentStateHandle(firstPath, 8, content.length());
 
-		SharedStateRegistryInterface sharedStateRegistry = new SharedSegmentStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedSegmentStateRegistry();
 		SharedStateRegistryKey firstKey = new SharedStateRegistryKey("1.sst");
 		Result result = sharedStateRegistry.registerReference(firstKey, handle1);
 		assertEquals(handle1, result.getReference());
@@ -282,7 +282,7 @@ public class SharedSegmentStateRegistryTest {
 		FsSegmentStateHandle handle2 = new FsSegmentStateHandle(firstPath, 3, 8);
 		FsSegmentStateHandle handle3 = new FsSegmentStateHandle(firstPath, 8, content.length());
 
-		SharedStateRegistryInterface sharedStateRegistry = new SharedSegmentStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedSegmentStateRegistry();
 		Map<String, Integer> fileRefCount = ((SharedSegmentStateRegistry) sharedStateRegistry).getFileRefCounts();
 		SharedStateRegistryKey firstKey = new SharedStateRegistryKey("1.sst");
 		Result result = sharedStateRegistry.registerReference(firstKey, handle1);

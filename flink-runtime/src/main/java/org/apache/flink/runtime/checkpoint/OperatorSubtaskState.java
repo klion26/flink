@@ -21,7 +21,7 @@ package org.apache.flink.runtime.checkpoint;
 import org.apache.flink.runtime.state.CompositeStateHandle;
 import org.apache.flink.runtime.state.OperatorStateHandle;
 import org.apache.flink.runtime.state.KeyedStateHandle;
-import org.apache.flink.runtime.state.SharedStateRegistryInterface;
+import org.apache.flink.runtime.state.SharedStateRegistry;
 import org.apache.flink.runtime.state.StateObject;
 import org.apache.flink.runtime.state.StateUtil;
 import org.apache.flink.util.Preconditions;
@@ -191,13 +191,13 @@ public class OperatorSubtaskState implements CompositeStateHandle {
 	}
 
 	@Override
-	public void registerSharedStates(SharedStateRegistryInterface sharedStateRegistry) {
+	public void registerSharedStates(SharedStateRegistry sharedStateRegistry) {
 		registerSharedState(sharedStateRegistry, managedKeyedState);
 		registerSharedState(sharedStateRegistry, rawKeyedState);
 	}
 
 	private static void registerSharedState(
-		SharedStateRegistryInterface sharedStateRegistry,
+		SharedStateRegistry sharedStateRegistry,
 		Iterable<KeyedStateHandle> stateHandles) {
 		for (KeyedStateHandle stateHandle : stateHandles) {
 			if (stateHandle != null) {

@@ -487,9 +487,9 @@ public class SavepointSerializerUtil {
 		}
 
 		switch (version) {
-			case 2:
+			case SavepointV2.VERSION:
 				return new SavepointV2(checkpointId, operatorStates, masterStates);
-			case 3:
+			case SavepointV3.VERSION:
 				return new SavepointV3(checkpointId, operatorStates, masterStates);
 			default:
 				throw new IllegalStateException("Deserialize savepoint do not support the passed in version: " + version);

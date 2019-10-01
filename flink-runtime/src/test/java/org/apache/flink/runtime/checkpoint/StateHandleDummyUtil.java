@@ -22,7 +22,7 @@ import org.apache.flink.runtime.state.KeyGroupRange;
 import org.apache.flink.runtime.state.KeyedStateHandle;
 import org.apache.flink.runtime.state.OperatorStateHandle;
 import org.apache.flink.runtime.state.OperatorStreamStateHandle;
-import org.apache.flink.runtime.state.SharedStateRegistryInterface;
+import org.apache.flink.runtime.state.SharedStateRegistry;
 import org.apache.flink.runtime.state.memory.ByteStreamStateHandle;
 
 import java.util.HashMap;
@@ -124,7 +124,7 @@ public class StateHandleDummyUtil {
 		}
 
 		@Override
-		public void registerSharedStates(SharedStateRegistryInterface stateRegistry) {
+		public void registerSharedStates(SharedStateRegistry stateRegistry) {
 		}
 
 		@Override

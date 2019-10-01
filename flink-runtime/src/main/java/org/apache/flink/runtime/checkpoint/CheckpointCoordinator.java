@@ -38,7 +38,7 @@ import org.apache.flink.runtime.messages.checkpoint.DeclineCheckpoint;
 import org.apache.flink.runtime.state.CheckpointStorageCoordinatorView;
 import org.apache.flink.runtime.state.CheckpointStorageLocation;
 import org.apache.flink.runtime.state.CompletedCheckpointStorageLocation;
-import org.apache.flink.runtime.state.SharedStateRegistryInterface;
+import org.apache.flink.runtime.state.SharedStateRegistry;
 import org.apache.flink.runtime.state.SharedStateRegistryFactory;
 import org.apache.flink.runtime.state.StateBackend;
 import org.apache.flink.runtime.taskmanager.DispatcherThreadFactory;
@@ -182,7 +182,7 @@ public class CheckpointCoordinator {
 	private final SharedStateRegistryFactory sharedStateRegistryFactory;
 
 	/** Registry that tracks state which is shared across (incremental) checkpoints. */
-	private SharedStateRegistryInterface sharedStateRegistry;
+	private SharedStateRegistry sharedStateRegistry;
 
 	private boolean isPreferCheckpointForRecovery;
 

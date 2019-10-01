@@ -23,8 +23,8 @@ import org.apache.flink.core.testutils.CommonTestUtils;
 import org.apache.flink.runtime.jobgraph.JobStatus;
 import org.apache.flink.runtime.jobgraph.JobVertexID;
 import org.apache.flink.runtime.jobgraph.OperatorID;
-import org.apache.flink.runtime.state.DefaultSharedStateRegistry;
-import org.apache.flink.runtime.state.SharedStateRegistryInterface;
+import org.apache.flink.runtime.state.SharedStateRegistry;
+import org.apache.flink.runtime.state.SharedStateRegistry;
 import org.apache.flink.runtime.state.testutils.EmptyStreamStateHandle;
 import org.apache.flink.runtime.state.testutils.TestCompletedCheckpointStorageLocation;
 
@@ -187,7 +187,7 @@ public class CompletedCheckpointTest {
 				CheckpointProperties.forCheckpoint(CheckpointRetentionPolicy.RETAIN_ON_FAILURE),
 				new TestCompletedCheckpointStorageLocation());
 
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 		checkpoint.registerSharedStatesAfterRestored(sharedStateRegistry);
 		verify(state, times(1)).registerSharedStates(sharedStateRegistry);
 	}
@@ -214,7 +214,7 @@ public class CompletedCheckpointTest {
 				props,
 				location);
 
-		SharedStateRegistryInterface sharedStateRegistry = new DefaultSharedStateRegistry();
+		SharedStateRegistry sharedStateRegistry = new SharedStateRegistry();
 		checkpoint.registerSharedStatesAfterRestored(sharedStateRegistry);
 		verify(state, times(1)).registerSharedStates(sharedStateRegistry);
 
