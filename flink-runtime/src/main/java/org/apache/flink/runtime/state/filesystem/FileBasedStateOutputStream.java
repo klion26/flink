@@ -118,7 +118,7 @@ public final class FileBasedStateOutputStream extends CheckpointStateOutputStrea
 
 	@Nullable
 	@Override
-	public FileStateHandle closeAndGetHandle() throws IOException {
+	public FsSegmentStateHandle closeAndGetHandle() throws IOException {
 		synchronized (this) {
 			if (!closed) {
 				try {
@@ -131,7 +131,7 @@ public final class FileBasedStateOutputStream extends CheckpointStateOutputStrea
 					// close and return
 					out.close();
 
-					return new FileStateHandle(path, size);
+					return new FsSegmentStateHandle(path, 0, size);
 				}
 				catch (Exception e) {
 					try {

@@ -311,7 +311,7 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
 
 							pos = writeBuffer.length;
 
-							long size = -1L;
+							long size = 0L;
 
 							// make a best effort attempt to figure out the size
 							try {
@@ -320,7 +320,7 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
 
 							outStream.close();
 
-							return new FileStateHandle(statePath, size);
+							return new FsSegmentStateHandle(statePath, 0, size);
 						} catch (Exception exception) {
 							try {
 								if (statePath != null) {

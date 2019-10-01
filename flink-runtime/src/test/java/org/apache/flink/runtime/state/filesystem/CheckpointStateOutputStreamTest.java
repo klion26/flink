@@ -88,7 +88,7 @@ public class CheckpointStateOutputStreamTest extends TestLogger {
 		final String fileName = "myFileName";
 		final Path filePath = new Path(folder, fileName);
 
-		final FileStateHandle handle;
+		final FsSegmentStateHandle handle;
 		try (FSDataOutputStream stream = createTestStream(fs, folder, fileName)) {
 			handle = closeAndGetResult(stream);
 		}
@@ -120,7 +120,7 @@ public class CheckpointStateOutputStreamTest extends TestLogger {
 		final byte[] data = new byte[1694523];
 
 		// write the data (mixed single byte writes and array writes)
-		final FileStateHandle handle;
+		final FsSegmentStateHandle handle;
 		try (FSDataOutputStream stream = createTestStream(fs, folder, fileName)) {
 			for (int i = 0; i < data.length; ) {
 				if (rnd.nextBoolean()) {
@@ -256,7 +256,7 @@ public class CheckpointStateOutputStreamTest extends TestLogger {
 	/**
 	 * Closes the stream successfully and returns a FileStateHandle to the result.
 	 */
-	private FileStateHandle closeAndGetResult(FSDataOutputStream stream) throws IOException {
+	private FsSegmentStateHandle closeAndGetResult(FSDataOutputStream stream) throws IOException {
 		switch (stateOutputStreamType) {
 			case FileBasedState:
 				return ((FileBasedStateOutputStream) stream).closeAndGetHandle();

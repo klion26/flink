@@ -24,8 +24,30 @@ package org.apache.flink.runtime.state;
  * the handle is no longer in the registry, we need to delete the resource used by the handle.
  */
 public interface SharedStateRegistryInterface extends AutoCloseable {
+
+	/**
+	 * Register a reference to the given shared state in the registry.
+	 * This does the following: We check if the state handle is actually new by the
+	 * registrationKey. If it is new, we register it with a reference count of 1. If there is
+	 * already a state handle registered under the given key, we dispose the given "new" state
+	 * handle, uptick the reference count of the previously existing state handle and return it as
+	 * a replacement with the result.
+	 *
+	 * <p>IMPORTANT: caller should check the state handle returned by the result, because the
+	 * registry is performing de-duplication and could potentially return a handle that is supposed
+	 * to replace the one from the registration request.
+	 */
 	Result registerReference(SharedStateRegistryKey registrationKey, StreamStateHandle state);
+
+	/**
+	 * Releases one reference to the given shared state in the registry. This decreases the
+	 * reference count by one. Once the count reaches zero, the shared state is deleted.
+	 */
 	Result unregisterReference(SharedStateRegistryKey registrationKey);
+
+	/**
+	 * Register all the given shared states in the registry.
+	 */
 	void registerAll(Iterable<? extends CompositeStateHandle> stateHandles);
 
 	/**

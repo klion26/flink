@@ -20,7 +20,7 @@ package org.apache.flink.runtime.state;
 
 import org.apache.flink.core.fs.FSDataInputStream;
 import org.apache.flink.core.fs.Path;
-import org.apache.flink.runtime.state.filesystem.FileStateHandle;
+import org.apache.flink.runtime.state.filesystem.FsSegmentStateHandle;
 import org.apache.flink.util.InstantiationUtil;
 import org.apache.flink.util.Preconditions;
 
@@ -49,7 +49,7 @@ public class RetrievableStreamStateHandle<T extends Serializable> implements
 
 	public RetrievableStreamStateHandle(Path filePath, long stateSize) {
 		Preconditions.checkNotNull(filePath);
-		this.wrappedStreamStateHandle = new FileStateHandle(filePath, stateSize);
+		this.wrappedStreamStateHandle = new FsSegmentStateHandle(filePath, 0, stateSize);
 	}
 
 	@Override

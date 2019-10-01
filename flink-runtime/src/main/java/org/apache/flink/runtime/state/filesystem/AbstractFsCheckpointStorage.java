@@ -267,8 +267,8 @@ public abstract class AbstractFsCheckpointStorage implements CheckpointStorage {
 			checkpointDir = status.getPath().getParent();
 		}
 
-		final FileStateHandle metaDataFileHandle = new FileStateHandle(
-				metadataFileStatus.getPath(), metadataFileStatus.getLen());
+		final FsSegmentStateHandle metaDataFileHandle = new FsSegmentStateHandle(
+				metadataFileStatus.getPath(), 0, metadataFileStatus.getLen());
 
 		final String pointer = checkpointDir.makeQualified(fs).toString();
 

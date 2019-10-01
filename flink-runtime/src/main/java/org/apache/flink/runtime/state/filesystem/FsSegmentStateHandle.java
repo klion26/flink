@@ -51,7 +51,7 @@ public class FsSegmentStateHandle implements StreamStateHandle {
 		final long startPosition,
 		final long endPosition) {
 		checkArgument(filePath != null);
-		checkArgument(startPosition >= 0 && endPosition > startPosition);
+		checkArgument(startPosition >= 0 && endPosition >= startPosition);
 		this.filePath = checkNotNull(filePath);
 		this.startPosition = startPosition;
 		this.endPosition = endPosition;

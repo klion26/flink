@@ -36,6 +36,8 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
+import static org.apache.flink.util.Preconditions.checkArgument;
+
 /**
  * Used for {@link org.apache.flink.runtime.state.filesystem.FsSegmentStateBackend}.
  */
@@ -98,6 +100,7 @@ public class SharedSegmentStateRegistry implements SharedStateRegistryInterface 
 	@Override
 	public Result registerReference(SharedStateRegistryKey registrationKey, StreamStateHandle state) {
 
+		checkArgument(state instanceof FsSegmentStateHandle, "SharedSegmentStateRegistry only support FsSegmentStateHandle, passed in " + state.getClass().getSimpleName());
 		Preconditions.checkNotNull(state);
 
 		StreamStateHandle scheduledStateDeletion = null;
@@ -205,10 +208,10 @@ public class SharedSegmentStateRegistry implements SharedStateRegistryInterface 
 	}
 
 	private void increaseFileRefCountForSegmentStateHandle(StreamStateHandle handle) {
-		if (handle instanceof FsSegmentStateHandle) {
-			String filePath = ((FsSegmentStateHandle) handle).getFilePath().toUri().toString();
-			fileRefCounts.put(filePath, fileRefCounts.computeIfAbsent(filePath, (nothing) -> 0) + 1);
-		}
+		checkArgument(handle instanceof FsSegmentStateHandle, "SharedSegmentStateRegistry only support FsSegmentStateHandle, passed in " + handle.getClass().getSimpleName());
+
+		String filePath = ((FsSegmentStateHandle) handle).getFilePath().toUri().toString();
+		fileRefCounts.put(filePath, fileRefCounts.computeIfAbsent(filePath, (nothing) -> 0) + 1);
 	}
 
 	/**
@@ -218,22 +221,21 @@ public class SharedSegmentStateRegistry implements SharedStateRegistryInterface 
 	 * 	2) else will add the underlying file to a set for deletion purpose in the future.
 	 */
 	private void descFileRefCountForSegmentStateHandle(StreamStateHandle handle, boolean canDeleteDirectly) {
-		if (handle instanceof FsSegmentStateHandle) {
-			String segmentFilePath = ((FsSegmentStateHandle) handle).getFilePath().toUri().toString();
+		checkArgument(handle instanceof FsSegmentStateHandle, "SharedSegmentStateRegistry only support FsSegmentStateHandle, passed in " + handle.getClass().getSimpleName());
+		String segmentFilePath = ((FsSegmentStateHandle) handle).getFilePath().toUri().toString();
 
-			Integer count = fileRefCounts.get(segmentFilePath);
-			Preconditions.checkState(count != null, "file ref count should never be null");
-			int newRefCount = fileRefCounts.get(segmentFilePath) - 1;
-			if (newRefCount <= 0) {
-				fileRefCounts.remove(segmentFilePath);
-				if (canDeleteDirectly) {
-					deleteQuietly(segmentFilePath);
-				} else {
-					underlyingFileOfDuplicatedStatehandles.add(segmentFilePath);
-				}
+		Integer count = fileRefCounts.get(segmentFilePath);
+		Preconditions.checkState(count != null, "file ref count should never be null");
+		int newRefCount = fileRefCounts.get(segmentFilePath) - 1;
+		if (newRefCount <= 0) {
+			fileRefCounts.remove(segmentFilePath);
+			if (canDeleteDirectly) {
+				deleteQuietly(segmentFilePath);
 			} else {
-				fileRefCounts.put(segmentFilePath, newRefCount);
+				underlyingFileOfDuplicatedStatehandles.add(segmentFilePath);
 			}
+		} else {
+			fileRefCounts.put(segmentFilePath, newRefCount);
 		}
 	}
 
@@ -268,8 +270,8 @@ public class SharedSegmentStateRegistry implements SharedStateRegistryInterface 
 	// checkpoint 2 includes 2.sst, 3.sst, 4.sst
 	// checkpoint 3 includes 4.sst
 	// checkpoint 2 and checkpoint 3 are both based on checkpoint 1
-	// so we'll register 4.ss twice with different state handle(checkpoint 2 and checkpoint 3)
-	// when register 4.sst in checkpoint 3, wo can't directly delete the underlying file,
+	// so we'll register 4.sst twice with different state handle(checkpoint 2 and checkpoint 3)
+	// when register 4.sst in checkpoint 3, we can't directly delete the underlying file,
 	// because we don't know if there exist any more state handle in checkpoint 3 will use
 	// the same underlying file(maybe 5.sst).
 	@Override
