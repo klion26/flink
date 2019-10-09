@@ -261,9 +261,9 @@ public class FsSegmentCheckpointStreamFactory implements CheckpointStreamFactory
 		@Override
 		public StreamStateHandle closeAndGetHandle() throws IOException {
 			checkState(Thread.currentThread().getId() == ownerThreadID);
-			checkState(!closed);
 
 			synchronized (lock) {
+				checkState(!closed);
 				Preconditions.checkState(openedOutputStreams.get(checkpointId) == this);
 
 				try {
@@ -305,12 +305,12 @@ public class FsSegmentCheckpointStreamFactory implements CheckpointStreamFactory
 		@Override
 		public long getPos() throws IOException {
 			checkState(Thread.currentThread().getId() == ownerThreadID);
-			checkState(!closed);
 
 			if (currentFileOutputStream == null) {
 				return bufferIndex;
 			} else {
 				synchronized (lock) {
+					checkState(!closed);
 					checkState(openedOutputStreams.get(checkpointId) == this);
 
 					try {
@@ -326,9 +326,9 @@ public class FsSegmentCheckpointStreamFactory implements CheckpointStreamFactory
 		@Override
 		public void flush() throws IOException {
 			checkState(Thread.currentThread().getId() == ownerThreadID);
-			checkState(!closed);
 
 			synchronized (lock) {
+				checkState(!closed);
 				checkState(openedOutputStreams.get(checkpointId) == this);
 
 				// create a new file if there does not exist an opened one
@@ -355,9 +355,9 @@ public class FsSegmentCheckpointStreamFactory implements CheckpointStreamFactory
 		@Override
 		public void sync() throws IOException {
 			checkState(Thread.currentThread().getId() == ownerThreadID);
-			checkState(!closed);
 
 			synchronized (lock) {
+				checkState(!closed);
 				Preconditions.checkState(openedOutputStreams.get(checkpointId) == this);
 
 				try {
