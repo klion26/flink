@@ -320,7 +320,7 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
 
 							outStream.close();
 
-							return new FsSegmentStateHandle(statePath, 0, size);
+							return new FileStateHandle(statePath, size);
 						} catch (Exception exception) {
 							try {
 								if (statePath != null) {

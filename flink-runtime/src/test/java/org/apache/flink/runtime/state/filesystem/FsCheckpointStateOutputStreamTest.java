@@ -225,7 +225,7 @@ public class FsCheckpointStateOutputStreamTest {
 
 		StreamStateHandle handle = stream.closeAndGetHandle();
 		if (expectFile) {
-			assertTrue(handle instanceof FsSegmentStateHandle);
+			assertTrue(handle instanceof FileStateHandle);
 		} else {
 			assertTrue(handle instanceof ByteStreamStateHandle);
 		}
@@ -297,7 +297,7 @@ public class FsCheckpointStateOutputStreamTest {
 		stream2.write(state2);
 		stream3.write(state3);
 
-		FsSegmentStateHandle handle1 = (FsSegmentStateHandle) stream1.closeAndGetHandle();
+		FileStateHandle handle1 = (FileStateHandle) stream1.closeAndGetHandle();
 		ByteStreamStateHandle handle2 = (ByteStreamStateHandle) stream2.closeAndGetHandle();
 		ByteStreamStateHandle handle3 = (ByteStreamStateHandle) stream3.closeAndGetHandle();
 
@@ -322,7 +322,7 @@ public class FsCheckpointStateOutputStreamTest {
 		validateBytesInStream(handle1.openInputStream(), state1);
 		handle1.discardState();
 		assertFalse(isDirectoryEmpty(directory));
-		ensureLocalFileNotDeleted(handle1.getFilePath());
+		ensureLocalFileDeleted(handle1.getFilePath());
 
 		validateBytesInStream(handle2.openInputStream(), state2);
 		handle2.discardState();
@@ -334,7 +334,7 @@ public class FsCheckpointStateOutputStreamTest {
 
 		validateBytesInStream(handle4.openInputStream(), state4);
 		handle4.discardState();
-		assertTrue(filesInDirectoryExpected(directory, 2));
+		assertTrue(isDirectoryEmpty(directory));
 	}
 
 	// ------------------------------------------------------------------------
@@ -383,11 +383,11 @@ public class FsCheckpointStateOutputStreamTest {
 	//  Utilities
 	// ------------------------------------------------------------------------
 
-	private static void ensureLocalFileNotDeleted(Path path) {
+	private static void ensureLocalFileDeleted(Path path) {
 		URI uri = path.toUri();
 		if ("file".equals(uri.getScheme())) {
 			File file = new File(uri.getPath());
-			assertTrue("file properly deleted", file.exists());
+			assertFalse("file not properly deleted", file.exists());
 		}
 		else {
 			throw new IllegalArgumentException("not a local path");
