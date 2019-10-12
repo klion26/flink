@@ -206,7 +206,7 @@ public class SavepointSerializerUtil {
 	}
 
 	@VisibleForTesting
-	static void serializeKeyedStateHandle(
+	public static void serializeKeyedStateHandle(
 		KeyedStateHandle stateHandle,
 		DataOutputStream dos) throws IOException {
 
@@ -260,7 +260,7 @@ public class SavepointSerializerUtil {
 	}
 
 	@VisibleForTesting
-	static KeyedStateHandle deserializeKeyedStateHandle(DataInputStream dis) throws IOException {
+	public static KeyedStateHandle deserializeKeyedStateHandle(DataInputStream dis) throws IOException {
 		final int type = dis.readByte();
 		if (NULL_HANDLE == type) {
 			return null;
@@ -330,7 +330,7 @@ public class SavepointSerializerUtil {
 	}
 
 	@VisibleForTesting
-	static OperatorStateHandle deserializeOperatorStateHandle(
+	public static OperatorStateHandle deserializeOperatorStateHandle(
 		DataInputStream dis) throws IOException {
 
 		final int type = dis.readByte();
@@ -362,7 +362,7 @@ public class SavepointSerializerUtil {
 	}
 
 	@VisibleForTesting
-	static void serializeStreamStateHandle(
+	public static void serializeStreamStateHandle(
 		StreamStateHandle stateHandle, DataOutputStream dos) throws IOException {
 
 		if (stateHandle == null) {
@@ -381,7 +381,7 @@ public class SavepointSerializerUtil {
 		dos.flush();
 	}
 
-	static StreamStateHandle deserializeStreamStateHandle(DataInputStream dis) throws IOException {
+	public static StreamStateHandle deserializeStreamStateHandle(DataInputStream dis) throws IOException {
 		final int type = dis.read();
 		if (NULL_HANDLE == type) {
 			return null;
