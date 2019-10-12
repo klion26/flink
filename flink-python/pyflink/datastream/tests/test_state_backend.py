@@ -213,7 +213,6 @@ class CustomStateBackendTests(PyFlinkTestCase):
                                     "StreamTaskTest$TestMemoryStateBackendFactory").newInstance()
         context_classloader = gateway.jvm.Thread.currentThread().getContextClassLoader()
         state_backend = _from_j_state_backend(j_factory.createFromConfig(j_config,
-                                                                         context_classloader,
-                                                                         1))
+                                                                         context_classloader))
 
         self.assertIsInstance(state_backend, CustomStateBackend)

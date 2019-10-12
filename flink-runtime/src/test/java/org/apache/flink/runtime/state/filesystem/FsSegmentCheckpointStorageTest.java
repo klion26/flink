@@ -128,7 +128,7 @@ public class FsSegmentCheckpointStorageTest extends AbstractFileCheckpointStorag
 		}
 
 		// the state must have gone to disk
-		FileStateHandle fileStateHandle = (FileStateHandle) stateHandle;
+		FsSegmentStateHandle fileStateHandle = (FsSegmentStateHandle) stateHandle;
 
 		// check that the state is in the correct directory
 		String parentDirName = fileStateHandle.getFilePath().getParent().getName();

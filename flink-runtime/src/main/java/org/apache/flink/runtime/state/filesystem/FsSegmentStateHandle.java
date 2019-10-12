@@ -21,7 +21,6 @@ package org.apache.flink.runtime.state.filesystem;
 import org.apache.flink.core.fs.FSDataInputStream;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.core.fs.Path;
-import org.apache.flink.runtime.state.StreamStateHandle;
 
 import java.io.IOException;
 
@@ -31,7 +30,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 /**
  * A state handle used in {@link FsSegmentCheckpointStreamFactory}.
  */
-public class FsSegmentStateHandle implements StreamStateHandle {
+public class FsSegmentStateHandle extends AbstractFileBasedStateHandle {
 	private static final long serialVersionUID = 26L;
 
 	/** The file where the segment locates. */
@@ -76,6 +75,7 @@ public class FsSegmentStateHandle implements StreamStateHandle {
 		return stateSize;
 	}
 
+	@Override
 	public Path getFilePath() {
 		return filePath;
 	}

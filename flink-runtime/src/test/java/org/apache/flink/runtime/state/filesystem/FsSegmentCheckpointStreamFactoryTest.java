@@ -63,7 +63,8 @@ public class FsSegmentCheckpointStreamFactoryTest {
 		// reset the outputstream, so that we can verify its close.
 		rawOutputSteams.put(1L, spyOutputStream);
 
-		checkpointStreamFactory.createCheckpointStateOutputStream(2, CheckpointedStateScope.SHARED);
+		// complete checkpoint 1, here we manually close the file outputstream.
+		checkpointStreamFactory.closeFileOutputStream(1);
 		verify(spyOutputStream).close();
 	}
 }

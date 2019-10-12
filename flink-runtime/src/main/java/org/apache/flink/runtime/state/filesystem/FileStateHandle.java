@@ -33,7 +33,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * {@link StreamStateHandle} for state that was written to a file stream. The written data is
  * identified by the file path. The state can be read again by calling {@link #openInputStream()}.
  */
-public class FileStateHandle implements StreamStateHandle {
+public class FileStateHandle extends AbstractFileBasedStateHandle {
 
 	private static final long serialVersionUID = 350284443258002355L;
 
@@ -59,6 +59,7 @@ public class FileStateHandle implements StreamStateHandle {
 	 *
 	 * @return The path where this handle's state is stored.
 	 */
+	@Override
 	public Path getFilePath() {
 		return filePath;
 	}

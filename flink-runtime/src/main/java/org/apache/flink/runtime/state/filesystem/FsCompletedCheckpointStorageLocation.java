@@ -34,7 +34,7 @@ public class FsCompletedCheckpointStorageLocation implements CompletedCheckpoint
 
 	private final Path exclusiveCheckpointDir;
 
-	private final FsSegmentStateHandle metadataFileHandle;
+	private final FileStateHandle metadataFileHandle;
 
 	private final String externalPointer;
 
@@ -43,7 +43,7 @@ public class FsCompletedCheckpointStorageLocation implements CompletedCheckpoint
 	public FsCompletedCheckpointStorageLocation(
 			FileSystem fs,
 			Path exclusiveCheckpointDir,
-			FsSegmentStateHandle metadataFileHandle,
+			FileStateHandle metadataFileHandle,
 			String externalPointer) {
 
 		this.fs = fs;
@@ -58,7 +58,7 @@ public class FsCompletedCheckpointStorageLocation implements CompletedCheckpoint
 	}
 
 	@Override
-	public FsSegmentStateHandle getMetadataHandle() {
+	public FileStateHandle getMetadataHandle() {
 		return metadataFileHandle;
 	}
 

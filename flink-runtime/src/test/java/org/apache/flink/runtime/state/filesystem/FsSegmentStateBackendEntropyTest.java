@@ -58,6 +58,7 @@ public class FsSegmentStateBackendEntropyTest {
 
 		FsSegmentCheckpointStorage storage = new FsSegmentCheckpointStorage(
 			fs, checkpointDir, checkpointDir, new JobID(), 1024, 1024);
+		storage.initializeBaseLocations();
 
 		FsSegmentCheckpointStorageLocation location = (FsSegmentCheckpointStorageLocation)
 			storage.initializeLocationForCheckpoint(96562);
@@ -70,7 +71,7 @@ public class FsSegmentStateBackendEntropyTest {
 		// check entropy in task-owned state, task owned state use FsCheckpointStateOutputStream.
 		try (CheckpointStreamFactory.CheckpointStateOutputStream stream = storage.createTaskOwnedStateStream()) {
 			stream.flush();
-			FileStateHandle handle = (FileStateHandle) stream.closeAndGetHandle();
+			FsSegmentStateHandle handle = (FsSegmentStateHandle) stream.closeAndGetHandle();
 
 			assertNotNull(handle);
 			assertThat(handle.getFilePath().toString(), not(containsString(ENTROPY_MARKER)));
@@ -82,7 +83,7 @@ public class FsSegmentStateBackendEntropyTest {
 				 location.createCheckpointStateOutputStream(1, CheckpointedStateScope.EXCLUSIVE)) {
 
 			stream.flush();
-			FileStateHandle handle = (FileStateHandle) stream.closeAndGetHandle();
+			FsSegmentStateHandle handle = (FsSegmentStateHandle) stream.closeAndGetHandle();
 
 			assertNotNull(handle);
 			assertThat(handle.getFilePath().toString(), not(containsString(ENTROPY_MARKER)));

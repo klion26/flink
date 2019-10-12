@@ -130,7 +130,7 @@ public final class FsCheckpointMetadataOutputStream extends CheckpointMetadataOu
 
 					out.close();
 
-					FsSegmentStateHandle metaDataHandle = new FsSegmentStateHandle(metadataFilePath, 0, size);
+					FileStateHandle metaDataHandle = new FileStateHandle(metadataFilePath, size);
 
 					return new FsCompletedCheckpointStorageLocation(
 							fileSystem, exclusiveCheckpointDir, metaDataHandle,
