@@ -25,16 +25,12 @@ import org.apache.flink.core.fs.Path;
 import java.io.IOException;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**
  * A state handle used in {@link FsSegmentCheckpointStreamFactory}.
  */
 public class FsSegmentStateHandle extends AbstractFileBasedStateHandle {
-	private static final long serialVersionUID = 26L;
-
-	/** The file where the segment locates. */
-	private final Path filePath;
+	private static final long serialVersionUID = 1L;
 
 	/** The start position(inclusive) of the snapshot data in the file. */
 	private final long startPosition;
@@ -42,19 +38,15 @@ public class FsSegmentStateHandle extends AbstractFileBasedStateHandle {
 	/** The end position(exclusive) of the snapshot data in the file. */
 	private final long endPosition;
 
-	/** The state size of this state handle. */
-	private final long stateSize;
-
 	public FsSegmentStateHandle(
 		final Path filePath,
 		final long startPosition,
 		final long endPosition) {
+		super(filePath, endPosition - startPosition);
 		checkArgument(filePath != null);
 		checkArgument(startPosition >= 0 && endPosition >= startPosition);
-		this.filePath = checkNotNull(filePath);
 		this.startPosition = startPosition;
 		this.endPosition = endPosition;
-		this.stateSize = endPosition - startPosition;
 	}
 
 	@Override
@@ -68,16 +60,6 @@ public class FsSegmentStateHandle extends AbstractFileBasedStateHandle {
 	@Override
 	public void discardState() throws Exception {
 		// avoid to delete the underlying file, it will be deleted by JM.
-	}
-
-	@Override
-	public long getStateSize() {
-		return stateSize;
-	}
-
-	@Override
-	public Path getFilePath() {
-		return filePath;
 	}
 
 	public long getStartPosition() {

@@ -21,6 +21,9 @@ package org.apache.flink.runtime.state.filesystem;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.runtime.state.StreamStateHandle;
 
+import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
 /**
  * Abstract class for all file based state handle.
  */
@@ -29,9 +32,31 @@ public abstract class AbstractFileBasedStateHandle implements StreamStateHandle 
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * Return the underlying file path used by current state handler.
-	 * @return
+	 * Underlying file used by current state handle, this file maybe used by multiple state handle.
 	 */
-	abstract Path getFilePath();
+	protected final Path filePath;
+
+	/** The size of the state in the file */
+	protected final long stateSize;
+
+	AbstractFileBasedStateHandle(Path filePath, long stateSize) {
+		this.filePath = checkNotNull(filePath);
+		checkArgument(stateSize >= -1);
+		this.stateSize = stateSize;
+	}
+	/**
+	 * Return the underlying file path used by current state handler.
+	 */
+	public Path getFilePath() {
+		return filePath;
+	}
+
+	/**
+	 * Returns the file size in bytes.
+	 */
+	@Override
+	public long getStateSize() {
+		return stateSize;
+	}
 }
 

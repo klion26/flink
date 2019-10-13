@@ -25,10 +25,6 @@ import org.apache.flink.runtime.state.StreamStateHandle;
 
 import java.io.IOException;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
-
-
 /**
  * {@link StreamStateHandle} for state that was written to a file stream. The written data is
  * identified by the file path. The state can be read again by calling {@link #openInputStream()}.
@@ -37,31 +33,13 @@ public class FileStateHandle extends AbstractFileBasedStateHandle {
 
 	private static final long serialVersionUID = 350284443258002355L;
 
-	/** The path to the file in the filesystem, fully describing the file system */
-	private final Path filePath;
-
-	/** The size of the state in the file */
-	private final long stateSize;
-
 	/**
 	 * Creates a new file state for the given file path.
 	 *
 	 * @param filePath The path to the file that stores the state.
 	 */
 	public FileStateHandle(Path filePath, long stateSize) {
-		checkArgument(stateSize >= -1);
-		this.filePath = checkNotNull(filePath);
-		this.stateSize = stateSize;
-	}
-
-	/**
-	 * Gets the path where this handle's state is stored.
-	 *
-	 * @return The path where this handle's state is stored.
-	 */
-	@Override
-	public Path getFilePath() {
-		return filePath;
+		super(filePath, stateSize);
 	}
 
 	@Override
@@ -79,16 +57,6 @@ public class FileStateHandle extends AbstractFileBasedStateHandle {
 	public void discardState() throws Exception {
 		FileSystem fs = getFileSystem();
 		fs.delete(filePath, false);
-	}
-
-	/**
-	 * Returns the file size in bytes.
-	 *
-	 * @return The file size in bytes.
-	 */
-	@Override
-	public long getStateSize() {
-		return stateSize;
 	}
 
 	/**
