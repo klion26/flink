@@ -67,8 +67,8 @@ MVN_TEST_OPTIONS="-Dflink.tests.with-openssl"
 
 e2e_modules=$(find flink-end-to-end-tests -mindepth 2 -maxdepth 5 -name 'pom.xml' -printf '%h\n' | sort -u | tr '\n' ',')
 
-MVN_COMPILE="mvn $MVN_COMMON_OPTIONS $MVN_COMPILE_OPTIONS $PROFILE $MVN_COMPILE_MODULES install"
-MVN_TEST="mvn $MVN_COMMON_OPTIONS $MVN_TEST_OPTIONS $PROFILE $MVN_TEST_MODULES verify"
+MVN_COMPILE="mvn $MVN_COMMON_OPTIONS $MVN_COMPILE_OPTIONS $PROFILE $MVN_COMPILE_MODULES install -Dcheckstyle.skip=true -pl flink-queryable-state/flink-queryable-state-runtime -am"
+MVN_TEST="mvn $MVN_COMMON_OPTIONS $MVN_TEST_OPTIONS $PROFILE $MVN_TEST_MODULES verify -Dcheckstyle.skip=true -pl flink-queryable-state/flink-queryable-state-runtime -am"
 MVN_E2E="mvn $MVN_COMMON_OPTIONS $MVN_TEST_OPTIONS $PROFILE -DincludeE2E="org.apache.flink.tests.util.categories.PreCommit" -pl ${e2e_modules},flink-dist verify"
 
 MVN_PID="${ARTIFACTS_DIR}/watchdog.mvn.pid"
@@ -263,33 +263,33 @@ upload_artifacts_s3
 cd ../../
 
 # only run end-to-end tests in misc because we only have flink-dist here
-case $TEST in
-    (misc)
-        if [ $EXIT_CODE == 0 ]; then
-            printf "\n\n==============================================================================\n"
-            printf "Running bash end-to-end tests\n"
-            printf "==============================================================================\n"
-
-            FLINK_DIR=build-target flink-end-to-end-tests/run-pre-commit-tests.sh
-
-            EXIT_CODE=$?
-        else
-            printf "\n==============================================================================\n"
-            printf "Previous build failure detected, skipping bash end-to-end tests.\n"
-            printf "==============================================================================\n"
-        fi
-        if [ $EXIT_CODE == 0 ]; then
-            printf "\n\n==============================================================================\n"
-            printf "Running java end-to-end tests\n"
-            printf "==============================================================================\n"
-
-            run_with_watchdog "$MVN_E2E -DdistDir=$(readlink -e build-target)"
-        else
-            printf "\n==============================================================================\n"
-            printf "Previous build failure detected, skipping java end-to-end tests.\n"
-        fi
-    ;;
-esac
+#case $TEST in
+#    (misc)
+#        if [ $EXIT_CODE == 0 ]; then
+#            printf "\n\n==============================================================================\n"
+#            printf "Running bash end-to-end tests\n"
+#            printf "==============================================================================\n"
+#
+#            FLINK_DIR=build-target flink-end-to-end-tests/run-pre-commit-tests.sh
+#
+#            EXIT_CODE=$?
+#        else
+#            printf "\n==============================================================================\n"
+#            printf "Previous build failure detected, skipping bash end-to-end tests.\n"
+#            printf "==============================================================================\n"
+#        fi
+#        if [ $EXIT_CODE == 0 ]; then
+#            printf "\n\n==============================================================================\n"
+#            printf "Running java end-to-end tests\n"
+#            printf "==============================================================================\n"
+#
+#            run_with_watchdog "$MVN_E2E -DdistDir=$(readlink -e build-target)"
+#        else
+#            printf "\n==============================================================================\n"
+#            printf "Previous build failure detected, skipping java end-to-end tests.\n"
+#        fi
+#    ;;
+#esac
 
 # Exit code for Travis build success/failure
 exit $EXIT_CODE

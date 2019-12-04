@@ -66,6 +66,8 @@ import org.apache.flink.shaded.netty4.io.netty.handler.codec.LengthFieldBasedFra
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.util.Collections;
@@ -80,6 +82,7 @@ import static org.junit.Assert.assertTrue;
  * Tests for {@link KvStateServerHandler}.
  */
 public class KvStateServerHandlerTest extends TestLogger {
+	private static final Logger LOG = LoggerFactory.getLogger(KvStateServerHandlerTest.class);
 
 	private static KvStateServerImpl testServer;
 
@@ -161,7 +164,8 @@ public class KvStateServerHandlerTest extends TestLogger {
 		ByteBuf serRequest = MessageSerializer.serializeRequest(channel.alloc(), requestId, request);
 
 		// Write the request and wait for the response
-		channel.writeInbound(serRequest);
+		boolean writeInbound = channel.writeInbound(serRequest);
+		LOG.info("KvStateServerHandlerTest#testSimpleQuery -> {}.", writeInbound);
 
 		ByteBuf buf = (ByteBuf) readInboundBlocking(channel);
 		buf.skipBytes(4); // skip frame length
@@ -209,7 +213,8 @@ public class KvStateServerHandlerTest extends TestLogger {
 		ByteBuf serRequest = MessageSerializer.serializeRequest(channel.alloc(), requestId, request);
 
 		// Write the request and wait for the response
-		channel.writeInbound(serRequest);
+		boolean writeInbound = channel.writeInbound(serRequest);
+		LOG.info("KvStateServerHandlerTest#testQueryUnknownKvStateID -> {}.", writeInbound);
 
 		ByteBuf buf = (ByteBuf) readInboundBlocking(channel);
 		buf.skipBytes(4); // skip frame length
@@ -270,7 +275,8 @@ public class KvStateServerHandlerTest extends TestLogger {
 		ByteBuf serRequest = MessageSerializer.serializeRequest(channel.alloc(), requestId, request);
 
 		// Write the request and wait for the response
-		channel.writeInbound(serRequest);
+		boolean writeInbound = channel.writeInbound(serRequest);
+		LOG.info("KvStateServerHandlerTest#testQueryUnknownKey -> {}.", writeInbound);
 
 		ByteBuf buf = (ByteBuf) readInboundBlocking(channel);
 		buf.skipBytes(4); // skip frame length
@@ -355,7 +361,8 @@ public class KvStateServerHandlerTest extends TestLogger {
 		ByteBuf serRequest = MessageSerializer.serializeRequest(channel.alloc(), 282872L, request);
 
 		// Write the request and wait for the response
-		channel.writeInbound(serRequest);
+		boolean writeInbound = channel.writeInbound(serRequest);
+		LOG.info("KvStateServerHandlerTest#testFailureOnGetSerializedValue -> {}.", writeInbound);
 
 		ByteBuf buf = (ByteBuf) readInboundBlocking(channel);
 		buf.skipBytes(4); // skip frame length
@@ -446,7 +453,8 @@ public class KvStateServerHandlerTest extends TestLogger {
 		ByteBuf serRequest = MessageSerializer.serializeRequest(channel.alloc(), 282872L, request);
 
 		// Write the request and wait for the response
-		channel.writeInbound(serRequest);
+		boolean writeInbound = channel.writeInbound(serRequest);
+		LOG.info("KvStateServerHandlerTest#testQueryExecutorShutDown -> writeInbound {}.", writeInbound);
 
 		ByteBuf buf = (ByteBuf) readInboundBlocking(channel);
 		buf.skipBytes(4); // skip frame length
@@ -482,7 +490,9 @@ public class KvStateServerHandlerTest extends TestLogger {
 		unexpectedMessage.writeInt(4);
 		unexpectedMessage.writeInt(123238213);
 
-		channel.writeInbound(unexpectedMessage);
+		boolean writeInbound;
+		writeInbound = channel.writeInbound(unexpectedMessage);
+		LOG.info("KvStateServerHandlerTest#testUnexpectedMessage -> {}.", writeInbound);
 
 		ByteBuf buf = (ByteBuf) readInboundBlocking(channel);
 		buf.skipBytes(4); // skip frame length
@@ -497,7 +507,8 @@ public class KvStateServerHandlerTest extends TestLogger {
 		KvStateResponse stateResponse = new KvStateResponse(new byte[0]);
 		unexpectedMessage = MessageSerializer.serializeResponse(channel.alloc(), 192L, stateResponse);
 
-		channel.writeInbound(unexpectedMessage);
+		writeInbound = channel.writeInbound(unexpectedMessage);
+		LOG.info("KvStateServerHandlerTest#testUnexpectedMessage#2 -> {}.", writeInbound);
 
 		buf = (ByteBuf) readInboundBlocking(channel);
 		buf.skipBytes(4); // skip frame length
@@ -531,8 +542,10 @@ public class KvStateServerHandlerTest extends TestLogger {
 
 		assertEquals(1L, serRequest.refCnt());
 
+		boolean writeInbound;
 		// Write regular request
-		channel.writeInbound(serRequest);
+		writeInbound = channel.writeInbound(serRequest);
+		LOG.info("KvStateServerHandlerTest#testIncomingBufferIsRecycled -> {}.", writeInbound);
 		assertEquals("Buffer not recycled", 0L, serRequest.refCnt());
 
 		// Write unexpected msg
@@ -542,7 +555,8 @@ public class KvStateServerHandlerTest extends TestLogger {
 
 		assertEquals(1L, unexpected.refCnt());
 
-		channel.writeInbound(unexpected);
+		writeInbound = channel.writeInbound(unexpected);
+		LOG.info("KvStateServerHandlerTest#testIncomingBufferIsRecycled#2 -> {}.", writeInbound);
 		assertEquals("Buffer not recycled", 0L, unexpected.refCnt());
 	}
 
@@ -601,8 +615,10 @@ public class KvStateServerHandlerTest extends TestLogger {
 		KvStateInternalRequest request = new KvStateInternalRequest(registryListener.kvStateId, wrongKeyAndNamespace);
 		ByteBuf serRequest = MessageSerializer.serializeRequest(channel.alloc(), 182828L, request);
 
+		boolean writeInbound;
 		// Write the request and wait for the response
-		channel.writeInbound(serRequest);
+		writeInbound = channel.writeInbound(serRequest);
+		LOG.info("KvStateServerHandlerTest#testSerializerMismatch -> {}.", writeInbound);
 
 		ByteBuf buf = (ByteBuf) readInboundBlocking(channel);
 		buf.skipBytes(4); // skip frame length
@@ -618,7 +634,8 @@ public class KvStateServerHandlerTest extends TestLogger {
 		serRequest = MessageSerializer.serializeRequest(channel.alloc(), 182829L, request);
 
 		// Write the request and wait for the response
-		channel.writeInbound(serRequest);
+		writeInbound = channel.writeInbound(serRequest);
+		LOG.info("KvStateServerHandlerTest#testSerializerMismatch#2 -> {}.", writeInbound);
 
 		buf = (ByteBuf) readInboundBlocking(channel);
 		buf.skipBytes(4); // skip frame length
@@ -692,7 +709,8 @@ public class KvStateServerHandlerTest extends TestLogger {
 		ByteBuf serRequest = MessageSerializer.serializeRequest(channel.alloc(), requestId, request);
 
 		// Write the request and wait for the response
-		channel.writeInbound(serRequest);
+		boolean writeInbound = channel.writeInbound(serRequest);
+		LOG.info("KvStateServerHandlerTest#testChunkedResponse -> {}.", writeInbound);
 
 		Object msg = readInboundBlocking(channel);
 		assertTrue("Not ChunkedByteBuf", msg instanceof ChunkedByteBuf);
