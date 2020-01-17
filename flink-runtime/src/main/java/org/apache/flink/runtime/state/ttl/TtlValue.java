@@ -21,6 +21,7 @@ package org.apache.flink.runtime.state.ttl;
 import javax.annotation.Nullable;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * This class wraps user value of state with TTL. Visibility is public for usage with external tools.
@@ -46,5 +47,23 @@ public class TtlValue<T> implements Serializable {
 
 	public long getLastAccessTimestamp() {
 		return lastAccessTimestamp;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		TtlValue<?> ttlValue = (TtlValue<?>) o;
+		return lastAccessTimestamp == ttlValue.lastAccessTimestamp &&
+				Objects.equals(userValue, ttlValue.userValue);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(userValue, lastAccessTimestamp);
 	}
 }

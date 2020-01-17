@@ -18,43 +18,85 @@
 
 package org.apache.flink.runtime.state.ttl;
 
-import org.apache.flink.api.common.typeutils.TypeSerializerSnapshotMigrationTestBase;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.common.typeutils.TypeSerializerMatchers;
+import org.apache.flink.api.common.typeutils.TypeSerializerSchemaCompatibility;
+import org.apache.flink.api.common.typeutils.TypeSerializerUpgradeTestBase;
 import org.apache.flink.api.common.typeutils.base.LongSerializer;
 import org.apache.flink.api.common.typeutils.base.StringSerializer;
 import org.apache.flink.runtime.state.ttl.TtlStateFactory.TtlSerializer;
-import org.apache.flink.runtime.state.ttl.TtlStateFactory.TtlSerializerSnapshot;
 import org.apache.flink.testutils.migration.MigrationVersion;
 
+import org.hamcrest.Matcher;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
  * State migration test for {@link TtlSerializerStateMigrationTest}.
  */
 @RunWith(Parameterized.class)
-public class TtlSerializerStateMigrationTest extends TypeSerializerSnapshotMigrationTestBase<TtlValue<String>> {
+public class TtlSerializerStateMigrationTest
+		extends TypeSerializerUpgradeTestBase<TtlValue<String>, TtlValue<String>> {
 
-	private static final String SPEC_NAME = "ttl-serializer";
-
-	public TtlSerializerStateMigrationTest(TestSpecification<TtlValue<String>> testSpecification) {
+	public TtlSerializerStateMigrationTest(
+			TestSpecification<TtlValue<String>, TtlValue<String>> testSpecification) {
 		super(testSpecification);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Parameterized.Parameters(name = "Test Specification = {0}")
-	public static Collection<TestSpecification<?>> testSpecifications() {
+	public static Collection<TestSpecification<?, ?>> testSpecifications() throws Exception {
 
-		final TestSpecifications testSpecifications = new TestSpecifications(MigrationVersion.v1_6, MigrationVersion.v1_7);
+		ArrayList<TestSpecification<?, ?>> testSpecifications = new ArrayList<>();
+		for (MigrationVersion migrationVersion : migrationVersions) {
+			testSpecifications.add(
+					new TestSpecification<>(
+							"ttl-serializer",
+							migrationVersion,
+							TtlSerializerSetup.class,
+							TtlSerializerVerifier.class));
+		}
 
-		testSpecifications.add(
-			SPEC_NAME,
-			TtlSerializer.class,
-			TtlSerializerSnapshot.class,
-			() -> new TtlSerializer<>(LongSerializer.INSTANCE, StringSerializer.INSTANCE));
+		return testSpecifications;
+	}
 
-		return testSpecifications.get();
+	// ----------------------------------------------------------------------------------------------
+	//  Specification for "ttl-serializer"
+	// ----------------------------------------------------------------------------------------------
+
+	public static final class TtlSerializerSetup
+			implements TypeSerializerUpgradeTestBase.PreUpgradeSetup<TtlValue<String>> {
+
+		@Override
+		public TypeSerializer<TtlValue<String>> createPriorSerializer() {
+			return new TtlSerializer<>(LongSerializer.INSTANCE, StringSerializer.INSTANCE);
+		}
+
+		@Override
+		public TtlValue<String> createTestData() {
+			return new TtlValue<>("hello Gordon", 13);
+		}
+	}
+
+	public static final class TtlSerializerVerifier
+			implements TypeSerializerUpgradeTestBase.UpgradeVerifier<TtlValue<String>> {
+
+		@Override
+		public TypeSerializer<TtlValue<String>> createUpgradedSerializer() {
+			return new TtlSerializer<>(LongSerializer.INSTANCE, StringSerializer.INSTANCE);
+		}
+
+		@Override
+		public TtlValue<String> expectedTestData() {
+			return new TtlValue<>("hello Gordon", 13);
+		}
+
+		@Override
+		public Matcher<TypeSerializerSchemaCompatibility<TtlValue<String>>> schemaCompatibilityMatcher() {
+			return TypeSerializerMatchers.isCompatibleAsIs();
+		}
 	}
 }
 
