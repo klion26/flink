@@ -18,43 +18,79 @@
 
 package org.apache.flink.api.java.typeutils.runtime;
 
-import org.apache.flink.api.common.typeutils.TypeSerializerSnapshotMigrationTestBase;
-import org.apache.flink.api.java.typeutils.runtime.ValueSerializer.ValueSerializerSnapshot;
-import org.apache.flink.api.java.typeutils.runtime.ValueSerializerMigrationTest.NameValue;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.common.typeutils.TypeSerializerMatchers;
+import org.apache.flink.api.common.typeutils.TypeSerializerSchemaCompatibility;
+import org.apache.flink.api.common.typeutils.TypeSerializerUpgradeTestBase;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.testutils.migration.MigrationVersion;
 import org.apache.flink.types.Value;
 
+import org.hamcrest.Matcher;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * State migration test for {@link RowSerializer}.
  */
 @RunWith(Parameterized.class)
-public class ValueSerializerMigrationTest extends TypeSerializerSnapshotMigrationTestBase<NameValue> {
-
-	public ValueSerializerMigrationTest(TestSpecification<NameValue> testSpecification) {
+public class ValueSerializerMigrationTest extends TypeSerializerUpgradeTestBase<ValueSerializerMigrationTest.NameValue, ValueSerializerMigrationTest.NameValue> {
+	public ValueSerializerMigrationTest(TestSpecification<NameValue, NameValue> testSpecification) {
 		super(testSpecification);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Parameterized.Parameters(name = "Test Specification = {0}")
-	public static Collection<TestSpecification<?>> testSpecifications() {
+	public static Collection<TestSpecification<?, ?>> testSpecifications() throws Exception {
+		ArrayList<TestSpecification<?, ?>> testSpecifications = new ArrayList<>();
+		for (MigrationVersion migrationVersion : migrationVersions) {
+			testSpecifications.add(
+				new TestSpecification<>(
+					"value-serializer",
+					migrationVersion,
+					ValueSerializerSetup.class,
+					ValueSerializerVerifier.class));
+		}
 
-		TestSpecifications testSpecifications = new TestSpecifications(MigrationVersion.v1_6, MigrationVersion.v1_7);
+		return testSpecifications;
+	}
 
-		testSpecifications.add(
-			"value-serializer",
-			ValueSerializer.class,
-			ValueSerializerSnapshot.class,
-			() -> new ValueSerializer<>(NameValue.class));
+	public static final class ValueSerializerSetup implements TypeSerializerUpgradeTestBase.PreUpgradeSetup<NameValue> {
+		@Override
+		public TypeSerializer<NameValue> createPriorSerializer() {
+			return new ValueSerializer<>(NameValue.class);
+		}
 
-		return testSpecifications.get();
+		@Override
+		public NameValue createTestData() {
+			NameValue value = new NameValue();
+			value.setName("klion26");
+			return value;
+		}
+	}
+
+	public static final class ValueSerializerVerifier implements TypeSerializerUpgradeTestBase.UpgradeVerifier<NameValue> {
+		@Override
+		public TypeSerializer<NameValue> createUpgradedSerializer() {
+			return new ValueSerializer<>(NameValue.class);
+		}
+
+		@Override
+		public NameValue expectedTestData() {
+			NameValue value = new NameValue();
+			value.setName("klion26");
+			return value;
+		}
+
+		@Override
+		public Matcher<TypeSerializerSchemaCompatibility<NameValue>> schemaCompatibilityMatcher() {
+			return TypeSerializerMatchers.isCompatibleAsIs();
+		}
 	}
 
 	/**
@@ -83,6 +119,18 @@ public class ValueSerializerMigrationTest extends TypeSerializerSnapshotMigratio
 		public void read(DataInputView in) throws IOException {
 			name = in.readUTF();
 		}
-	}
 
+		@Override
+		public boolean equals(Object obj) {
+			if (obj == this) {
+				return true;
+			}
+			if (!(obj instanceof NameValue)) {
+				return false;
+			}
+
+			NameValue other = (NameValue) obj;
+			return Objects.equals(this.name, other.name);
+		}
+	}
 }
