@@ -18,14 +18,18 @@
 package org.apache.flink.streaming.api.operators;
 
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.api.common.typeutils.TypeSerializerSnapshotMigrationTestBase;
+import org.apache.flink.api.common.typeutils.TypeSerializerMatchers;
+import org.apache.flink.api.common.typeutils.TypeSerializerSchemaCompatibility;
+import org.apache.flink.api.common.typeutils.TypeSerializerUpgradeTestBase;
 import org.apache.flink.api.common.typeutils.base.IntSerializer;
 import org.apache.flink.api.common.typeutils.base.StringSerializer;
 import org.apache.flink.testutils.migration.MigrationVersion;
 
+import org.hamcrest.Matcher;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -33,29 +37,62 @@ import java.util.Collection;
  */
 @RunWith(Parameterized.class)
 public class TimerSerializerSnapshotMigrationTest
-	extends TypeSerializerSnapshotMigrationTestBase<TimerHeapInternalTimer<String, Integer>> {
+	extends TypeSerializerUpgradeTestBase<TimerHeapInternalTimer<String, Integer>, TimerHeapInternalTimer<String, Integer>> {
 
 	public TimerSerializerSnapshotMigrationTest(
-		TestSpecification<TimerHeapInternalTimer<String, Integer>> testSpecification) {
+		TestSpecification<TimerHeapInternalTimer<String, Integer>, TimerHeapInternalTimer<String, Integer>> testSpecification) {
 		super(testSpecification);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Parameterized.Parameters(name = "Test Specification = {0}")
-	public static Collection<TestSpecification<?>> testSpecifications() {
+	public static Collection<TestSpecification<?, ?>> testSpecifications() throws Exception {
 
-		final TestSpecifications testSpecifications = new TestSpecifications(MigrationVersion.v1_6, MigrationVersion.v1_7);
-
-		testSpecifications.add(
-			"timer-serializer",
-			TimerSerializer.class,
-			TimerSerializerSnapshot.class,
-			TimerSerializerSnapshotMigrationTest::stringIntTimerSerializerSupplier);
-
-		return testSpecifications.get();
+		ArrayList<TestSpecification<?, ?>> testSpecifications = new ArrayList<>();
+		for (MigrationVersion migrationVersion : migrationVersions) {
+			testSpecifications.add(
+				new TestSpecification<>(
+					"timer-serializer",
+					migrationVersion,
+					TimerSerializerSetup.class,
+					TimerSerializerVerifier.class));
+		}
+		return testSpecifications;
 	}
 
 	private static TypeSerializer<TimerHeapInternalTimer<String, Integer>> stringIntTimerSerializerSupplier() {
 		return new TimerSerializer<>(StringSerializer.INSTANCE, IntSerializer.INSTANCE);
+	}
+
+	// ----------------------------------------------------------------------------------------------
+	// Specification for "TimerSerializer"
+	// ----------------------------------------------------------------------------------------------
+	public static final class TimerSerializerSetup implements TypeSerializerUpgradeTestBase.PreUpgradeSetup<TimerHeapInternalTimer<String, Integer>> {
+		@Override
+		public TypeSerializer<TimerHeapInternalTimer<String, Integer>> createPriorSerializer() {
+			return new TimerSerializer<>(StringSerializer.INSTANCE, IntSerializer.INSTANCE);
+		}
+
+		@Override
+		public TimerHeapInternalTimer<String, Integer> createTestData() {
+			return new TimerHeapInternalTimer<>(12345, "key", 678);
+		}
+	}
+
+	public static final class TimerSerializerVerifier implements TypeSerializerUpgradeTestBase.UpgradeVerifier<TimerHeapInternalTimer<String, Integer>> {
+		@Override
+		public TypeSerializer<TimerHeapInternalTimer<String, Integer>> createUpgradedSerializer() {
+			return new TimerSerializer<>(StringSerializer.INSTANCE, IntSerializer.INSTANCE);
+		}
+
+		@Override
+		public TimerHeapInternalTimer<String, Integer> expectedTestData() {
+			return new TimerHeapInternalTimer<>(12345, "key", 678);
+		}
+
+		@Override
+		public Matcher<TypeSerializerSchemaCompatibility<TimerHeapInternalTimer<String, Integer>>> schemaCompatibilityMatcher() {
+			return TypeSerializerMatchers.isCompatibleAsIs();
+		}
 	}
 }
