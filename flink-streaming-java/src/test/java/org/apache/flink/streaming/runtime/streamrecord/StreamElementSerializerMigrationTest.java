@@ -18,38 +18,75 @@
 
 package org.apache.flink.streaming.runtime.streamrecord;
 
-import org.apache.flink.api.common.typeutils.TypeSerializerSnapshotMigrationTestBase;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.common.typeutils.TypeSerializerMatchers;
+import org.apache.flink.api.common.typeutils.TypeSerializerSchemaCompatibility;
+import org.apache.flink.api.common.typeutils.TypeSerializerUpgradeTestBase;
 import org.apache.flink.api.common.typeutils.base.StringSerializer;
-import org.apache.flink.streaming.runtime.streamrecord.StreamElementSerializer.StreamElementSerializerSnapshot;
 import org.apache.flink.testutils.migration.MigrationVersion;
 
+import org.hamcrest.Matcher;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
  * Migration tests for {@link StreamElementSerializer}.
  */
 @RunWith(Parameterized.class)
-public class StreamElementSerializerMigrationTest extends TypeSerializerSnapshotMigrationTestBase<StreamElement> {
+public class StreamElementSerializerMigrationTest extends TypeSerializerUpgradeTestBase<StreamElement, StreamElement> {
 
-	public StreamElementSerializerMigrationTest(TestSpecification<StreamElement> testSpecification) {
+	public StreamElementSerializerMigrationTest(TestSpecification<StreamElement, StreamElement> testSpecification) {
 		super(testSpecification);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Parameterized.Parameters(name = "Test Specification = {0}")
-	public static Collection<TestSpecification<?>> testSpecifications() {
+	public static Collection<TestSpecification<?, ?>> testSpecifications() throws Exception {
 
-		final TestSpecifications testSpecifications = new TestSpecifications(MigrationVersion.v1_6, MigrationVersion.v1_7);
+		ArrayList<TestSpecification<?, ?>> testSpecifications = new ArrayList<>();
+		for (MigrationVersion migrationVersion : migrationVersions) {
+			testSpecifications.add(
+				new TestSpecification<>(
+					"stream-element-serializer",
+					migrationVersion,
+					StreamElementSetup.class,
+					StreamElementVerifier.class));
+		}
 
-		testSpecifications.add(
-			"stream-element-serializer",
-			StreamElementSerializer.class,
-			StreamElementSerializerSnapshot.class,
-			() -> new StreamElementSerializer<>(StringSerializer.INSTANCE));
+		return testSpecifications;
+	}
 
-		return testSpecifications.get();
+	// ----------------------------------------------------------------------------------------------
+	//  Specification for "StreamElement-serializer"
+	// ----------------------------------------------------------------------------------------------
+	public static final class StreamElementSetup implements TypeSerializerUpgradeTestBase.PreUpgradeSetup<StreamElement> {
+		@Override
+		public TypeSerializer<StreamElement> createPriorSerializer() {
+			return new StreamElementSerializer<>(StringSerializer.INSTANCE);
+		}
+
+		@Override
+		public StreamElement createTestData() {
+			return new StreamRecord<>("key", 123456);
+		}
+	}
+
+	public static final class StreamElementVerifier implements TypeSerializerUpgradeTestBase.UpgradeVerifier<StreamElement> {
+		@Override
+		public TypeSerializer<StreamElement> createUpgradedSerializer() {
+			return new StreamElementSerializer<>(StringSerializer.INSTANCE);
+		}
+
+		@Override
+		public StreamElement expectedTestData() {
+			return new StreamRecord<>("key", 123456);
+		}
+
+		@Override
+		public Matcher<TypeSerializerSchemaCompatibility<StreamElement>> schemaCompatibilityMatcher() {
+			return TypeSerializerMatchers.isCompatibleAsIs();
+		}
 	}
 }
