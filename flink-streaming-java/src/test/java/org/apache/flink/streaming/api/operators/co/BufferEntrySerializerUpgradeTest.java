@@ -69,9 +69,6 @@ public class BufferEntrySerializerUpgradeTest
 	//  Specification for "buffer-entry-serializer"
 	// ----------------------------------------------------------------------------------------------
 
-	/**
-	 * BufferEntrySerializerSetup.
-	 */
 	public static final class BufferEntrySerializerSetup
 			implements TypeSerializerUpgradeTestBase.PreUpgradeSetup<BufferEntry<String>> {
 
@@ -87,9 +84,6 @@ public class BufferEntrySerializerUpgradeTest
 		}
 	}
 
-	/**
-	 * BufferEntrySerializerVerifier.
-	 */
 	public static final class BufferEntrySerializerVerifier
 			implements TypeSerializerUpgradeTestBase.UpgradeVerifier<BufferEntry<String>> {
 
