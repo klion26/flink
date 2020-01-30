@@ -64,6 +64,10 @@ public class StreamElementSerializerUpgradeTest extends TypeSerializerUpgradeTes
 	// ----------------------------------------------------------------------------------------------
 	//  Specification for "StreamElement-serializer"
 	// ----------------------------------------------------------------------------------------------
+
+	/**
+	 * StreamElementSetup.
+	 */
 	public static final class StreamElementSetup implements TypeSerializerUpgradeTestBase.PreUpgradeSetup<StreamElement> {
 		@Override
 		public TypeSerializer<StreamElement> createPriorSerializer() {
@@ -76,6 +80,9 @@ public class StreamElementSerializerUpgradeTest extends TypeSerializerUpgradeTes
 		}
 	}
 
+	/**
+	 * StreamElementVerifier.
+	 */
 	public static final class StreamElementVerifier implements TypeSerializerUpgradeTestBase.UpgradeVerifier<StreamElement> {
 		@Override
 		public TypeSerializer<StreamElement> createUpgradedSerializer() {

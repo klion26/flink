@@ -72,6 +72,9 @@ public class AvroSerializerUpgradeTest extends TypeSerializerUpgradeTestBase<Obj
 	//  Specification for "generic-avro-serializer"
 	// ----------------------------------------------------------------------------------------------
 
+	/**
+	 * GenericAvroSerializerSetup.
+	 */
 	public static final class GenericAvroSerializerSetup implements TypeSerializerUpgradeTestBase.PreUpgradeSetup<GenericRecord> {
 
 		@Override
@@ -93,6 +96,9 @@ public class AvroSerializerUpgradeTest extends TypeSerializerUpgradeTestBase<Obj
 		}
 	}
 
+	/**
+	 * GenericAvroSerializerVerifier.
+	 */
 	public static final class GenericAvroSerializerVerifier implements TypeSerializerUpgradeTestBase.UpgradeVerifier<GenericRecord> {
 
 		@SuppressWarnings({"unchecked", "rawtypes"})
@@ -124,6 +130,9 @@ public class AvroSerializerUpgradeTest extends TypeSerializerUpgradeTestBase<Obj
 	//  Specification for "specific-avro-serializer"
 	// ----------------------------------------------------------------------------------------------
 
+	/**
+	 * SpecificAvroSerializerSetup.
+	 */
 	public static final class SpecificAvroSerializerSetup implements TypeSerializerUpgradeTestBase.PreUpgradeSetup<Address> {
 
 		@Override
@@ -145,6 +154,9 @@ public class AvroSerializerUpgradeTest extends TypeSerializerUpgradeTestBase<Obj
 		}
 	}
 
+	/**
+	 * SpecificAvroSerializerVerifier.
+	 */
 	public static final class SpecificAvroSerializerVerifier implements TypeSerializerUpgradeTestBase.UpgradeVerifier<Address> {
 
 		@Override

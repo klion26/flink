@@ -69,6 +69,10 @@ public class TimerSerializerUpgradeTest
 	// ----------------------------------------------------------------------------------------------
 	// Specification for "TimerSerializer"
 	// ----------------------------------------------------------------------------------------------
+
+	/**
+	 * TimerSerializerSetup.
+	 */
 	public static final class TimerSerializerSetup implements TypeSerializerUpgradeTestBase.PreUpgradeSetup<TimerHeapInternalTimer<String, Integer>> {
 		@Override
 		public TypeSerializer<TimerHeapInternalTimer<String, Integer>> createPriorSerializer() {
@@ -81,6 +85,9 @@ public class TimerSerializerUpgradeTest
 		}
 	}
 
+	/**
+	 * TimerSerializerVerifier.
+	 */
 	public static final class TimerSerializerVerifier implements TypeSerializerUpgradeTestBase.UpgradeVerifier<TimerHeapInternalTimer<String, Integer>> {
 		@Override
 		public TypeSerializer<TimerHeapInternalTimer<String, Integer>> createUpgradedSerializer() {
