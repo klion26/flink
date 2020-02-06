@@ -183,4 +183,7 @@ under the License.
 	<suppress
 		files="(.*)StateBackendTestBase.java"
 		checks="FileLength"/>
+	<suppress
+		files="(.*)test[/\\](.*)runtime[/\\]state[/\\](.*)"
+		checks="JavadocType"/>
 </suppressions>

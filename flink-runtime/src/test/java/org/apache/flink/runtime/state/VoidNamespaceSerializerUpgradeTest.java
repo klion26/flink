@@ -79,9 +79,6 @@ public class VoidNamespaceSerializerUpgradeTest extends TypeSerializerUpgradeTes
 		}
 	}
 
-	/**
-	 * VoidNamespaceSerializerVerifier.
-	 */
 	public static final class VoidNamespaceSerializerVerifier implements TypeSerializerUpgradeTestBase.UpgradeVerifier<VoidNamespace> {
 		@Override
 		public TypeSerializer<VoidNamespace> createUpgradedSerializer() {
