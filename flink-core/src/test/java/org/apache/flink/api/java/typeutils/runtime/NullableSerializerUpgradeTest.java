@@ -71,7 +71,7 @@ public class NullableSerializerUpgradeTest extends TypeSerializerUpgradeTestBase
 	// ----------------------------------------------------------------------------------------------
 
 	/**
-	 * NullablePaddedSerializerSetup.
+	 * This class is only public to work with {@link org.apache.flink.api.common.typeutils.ClassRelocator}.
 	 */
 	public static final class NullablePaddedSerializerSetup implements TypeSerializerUpgradeTestBase.PreUpgradeSetup<Long> {
 		@Override
@@ -86,7 +86,7 @@ public class NullableSerializerUpgradeTest extends TypeSerializerUpgradeTestBase
 	}
 
 	/**
-	 * NullablePaddedSerializerVerifier.
+	 * This class is only public to work with {@link org.apache.flink.api.common.typeutils.ClassRelocator}.
 	 */
 	public static final class NullablePaddedSerializerVerifier implements TypeSerializerUpgradeTestBase.UpgradeVerifier<Long> {
 		@Override
@@ -110,7 +110,7 @@ public class NullableSerializerUpgradeTest extends TypeSerializerUpgradeTestBase
 	// ----------------------------------------------------------------------------------------------
 
 	/**
-	 * NullableNotPaddedSerializerSetup.
+	 * This class is only public to work with {@link org.apache.flink.api.common.typeutils.ClassRelocator}.
 	 */
 	public static final class NullableNotPaddedSerializerSetup implements TypeSerializerUpgradeTestBase.PreUpgradeSetup<Long> {
 		@Override
@@ -125,7 +125,7 @@ public class NullableSerializerUpgradeTest extends TypeSerializerUpgradeTestBase
 	}
 
 	/**
-	 * NullableNotPaddedSerializerVerifier.
+	 * This class is only public to work with {@link org.apache.flink.api.common.typeutils.ClassRelocator}.
 	 */
 	public static final class NullableNotPaddedSerializerVerifier implements TypeSerializerUpgradeTestBase.UpgradeVerifier<Long> {
 		@Override
