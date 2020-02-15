@@ -1277,7 +1277,7 @@ public class FlinkKafkaProducer<IN>
 	 */
 	@VisibleForTesting
 	@Internal
-	static class KafkaTransactionState {
+	public static class KafkaTransactionState {
 
 		private final transient FlinkKafkaInternalProducer<byte[], byte[]> producer;
 
@@ -1288,15 +1288,18 @@ public class FlinkKafkaProducer<IN>
 
 		final short epoch;
 
-		KafkaTransactionState(String transactionalId, FlinkKafkaInternalProducer<byte[], byte[]> producer) {
+		@VisibleForTesting
+		public KafkaTransactionState(String transactionalId, FlinkKafkaInternalProducer<byte[], byte[]> producer) {
 			this(transactionalId, producer.getProducerId(), producer.getEpoch(), producer);
 		}
 
-		KafkaTransactionState(FlinkKafkaInternalProducer<byte[], byte[]> producer) {
+		@VisibleForTesting
+		public KafkaTransactionState(FlinkKafkaInternalProducer<byte[], byte[]> producer) {
 			this(null, -1, (short) -1, producer);
 		}
 
-		KafkaTransactionState(
+		@VisibleForTesting
+		public KafkaTransactionState(
 			@Nullable String transactionalId,
 			long producerId,
 			short epoch,
@@ -1359,7 +1362,8 @@ public class FlinkKafkaProducer<IN>
 	public static class KafkaTransactionContext {
 		final Set<String> transactionalIds;
 
-		KafkaTransactionContext(Set<String> transactionalIds) {
+		@VisibleForTesting
+		public KafkaTransactionContext(Set<String> transactionalIds) {
 			checkNotNull(transactionalIds);
 			this.transactionalIds = transactionalIds;
 		}
