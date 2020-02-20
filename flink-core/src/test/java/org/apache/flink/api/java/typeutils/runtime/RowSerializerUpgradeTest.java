@@ -63,7 +63,7 @@ public class RowSerializerUpgradeTest extends TypeSerializerUpgradeTestBase<Row,
 		return testSpecifications;
 	}
 
-	private static TypeSerializer<Row> stringLongRowSupplier() {
+	public static TypeSerializer<Row> stringLongRowSupplier() {
 		RowTypeInfo rowTypeInfo = new RowTypeInfo(BasicTypeInfo.STRING_TYPE_INFO, BasicTypeInfo.LONG_TYPE_INFO);
 		return rowTypeInfo.createSerializer(new ExecutionConfig());
 	}
@@ -84,8 +84,8 @@ public class RowSerializerUpgradeTest extends TypeSerializerUpgradeTestBase<Row,
 		@Override
 		public Row createTestData() {
 			Row row = new Row(2);
-			row.setField(0, 1234L);
-			row.setField(1, "flink");
+			row.setField(0, "flink");
+			row.setField(1, 42L);
 			return row;
 		}
 	}
@@ -102,8 +102,8 @@ public class RowSerializerUpgradeTest extends TypeSerializerUpgradeTestBase<Row,
 		@Override
 		public Matcher<Row> testDataMatcher() {
 			Row row = new Row(2);
-			row.setField(0, 1234L);
-			row.setField(1, "flink");
+			row.setField(0, "flink");
+			row.setField(1, 42L);
 			return is(row);
 		}
 
