@@ -520,7 +520,7 @@ public class CoGroupedStreams<T1, T2> {
 
 	@VisibleForTesting
 	@Internal
-	static class UnionSerializer<T1, T2> extends TypeSerializer<TaggedUnion<T1, T2>> {
+	public static class UnionSerializer<T1, T2> extends TypeSerializer<TaggedUnion<T1, T2>> {
 		private static final long serialVersionUID = 1L;
 
 		private final TypeSerializer<T1> oneSerializer;
