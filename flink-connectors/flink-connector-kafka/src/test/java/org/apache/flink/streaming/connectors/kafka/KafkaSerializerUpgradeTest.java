@@ -102,7 +102,9 @@ public class KafkaSerializerUpgradeTest extends TypeSerializerUpgradeTestBase<Ob
 
 		@Override
 		public Matcher<FlinkKafkaProducer.KafkaTransactionState> testDataMatcher() {
-			return is(new FlinkKafkaProducer.KafkaTransactionState("1234", 3456, (short) 789, new FlinkKafkaInternalProducer<>(new Properties())));
+			@SuppressWarnings("unchecked")
+			FlinkKafkaInternalProducer<byte[], byte[]> mock = Mockito.mock(FlinkKafkaInternalProducer.class);
+			return is(new FlinkKafkaProducer.KafkaTransactionState("1234", 3456, (short) 789, mock));
 		}
 
 		@Override
