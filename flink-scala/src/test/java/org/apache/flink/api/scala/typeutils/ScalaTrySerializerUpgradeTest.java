@@ -108,7 +108,7 @@ public class ScalaTrySerializerUpgradeTest extends TypeSerializerUpgradeTestBase
 	/**
 	 * A specified runtime exception override {@link #equals(Object)}.
 	 */
-	static final class SpecifiedException extends RuntimeException {
+	public static final class SpecifiedException extends RuntimeException {
 		public SpecifiedException(String message) {
 			super(message);
 		}
