@@ -103,7 +103,7 @@ public class MapViewSerializerUpgradeTest extends TypeSerializerUpgradeTestBase<
 		}
 	}
 
-	private static MapView<Integer, String> mockTestData() {
+	public static MapView<Integer, String> mockTestData() {
 		MapView<Integer, String> view = new MapView<>(TypeInformation.of(Integer.class), TypeInformation.of(String.class));
 		try {
 			view.put(1, "1");
