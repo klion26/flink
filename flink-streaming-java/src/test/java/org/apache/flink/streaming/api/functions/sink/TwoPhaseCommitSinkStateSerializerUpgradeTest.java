@@ -63,7 +63,7 @@ public class TwoPhaseCommitSinkStateSerializerUpgradeTest
 		return testSpecifications;
 	}
 
-	private static TypeSerializer<TwoPhaseCommitSinkFunction.State<Integer, String>> intStringStateSerializerSupplier() {
+	public static TypeSerializer<TwoPhaseCommitSinkFunction.State<Integer, String>> intStringStateSerializerSupplier() {
 		return new TwoPhaseCommitSinkFunction.StateSerializer<>(IntSerializer.INSTANCE, StringSerializer.INSTANCE);
 	}
 
