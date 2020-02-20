@@ -28,6 +28,7 @@ import org.apache.flink.testutils.migration.MigrationVersion;
 import org.hamcrest.Matcher;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -84,7 +85,9 @@ public class KafkaSerializerUpgradeTest extends TypeSerializerUpgradeTestBase<Ob
 
 		@Override
 		public FlinkKafkaProducer.KafkaTransactionState createTestData() {
-			return new FlinkKafkaProducer.KafkaTransactionState("1234", 3456, (short) 789, new FlinkKafkaInternalProducer<>(new Properties()));
+			@SuppressWarnings("unchecked")
+			FlinkKafkaInternalProducer<byte[], byte[]> mock = Mockito.mock(FlinkKafkaInternalProducer.class);
+			return new FlinkKafkaProducer.KafkaTransactionState("1234", 3456, (short) 789, mock);
 		}
 	}
 
