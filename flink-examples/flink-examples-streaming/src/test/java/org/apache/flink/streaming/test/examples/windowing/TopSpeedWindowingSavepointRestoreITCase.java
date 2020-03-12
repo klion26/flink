@@ -18,23 +18,27 @@
 
 package org.apache.flink.streaming.test.examples.windowing;
 
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.FileSystem;
-import org.apache.flink.fs.s3presto.S3FileSystemFactory;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
-import org.apache.flink.runtime.state.memory.MemoryStateBackend;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.examples.windowing.TopSpeedWindowing;
 import org.apache.flink.test.checkpointing.utils.MigrationTestUtils;
 import org.apache.flink.test.checkpointing.utils.SavepointMigrationTestBase;
+import org.apache.flink.test.checkpointing.utils.StatefulJobSavepointMigrationITCase;
 import org.apache.flink.testutils.s3.S3TestCredentials;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.facebook.presto.hive.s3.PrestoS3FileSystem.S3_USE_INSTANCE_CREDENTIALS;
+import static org.apache.flink.test.checkpointing.utils.StatefulJobSavepointMigrationITCase.ExecutionMode.PERFORM_SAVEPOINT;
+import static org.apache.flink.test.checkpointing.utils.StatefulJobSavepointMigrationITCase.ExecutionMode.VERIFY_SAVEPOINT;
 
 /**
  * Migration ITCases for a stateful job. The tests are parameterized to cover
@@ -43,12 +47,14 @@ import static com.facebook.presto.hive.s3.PrestoS3FileSystem.S3_USE_INSTANCE_CRE
 public class TopSpeedWindowingSavepointRestoreITCase extends SavepointMigrationTestBase {
 
 	public TopSpeedWindowingSavepointRestoreITCase() throws Exception {
+		super();
 	}
 
 	@Test
-	public void testSavepoint() throws Exception {
-		final int parallelism = 4;
+	@Ignore
+	public void testSavepointS3() throws Exception {
 
+		String savepointPath = System.getenv("SAVEPOINT_SOURCE");
 		{
 			Configuration configuration = new Configuration();
 			configuration.setString(S3_USE_INSTANCE_CREDENTIALS, "false");
@@ -57,6 +63,25 @@ public class TopSpeedWindowingSavepointRestoreITCase extends SavepointMigrationT
 			FileSystem.initialize(configuration);
 		}
 
+		execute(VERIFY_SAVEPOINT, savepointPath, 4);
+	}
+
+	@Test
+	public void testSavepoint() throws Exception {
+		String savepointPath = "src/test/resources/topspeedwindowing-";
+
+		ClusterClient<?> client = miniClusterResource.getClusterClient();
+		for (int i = 1; ; ++i) {
+			Tuple2<JobID, String> result = execute(PERFORM_SAVEPOINT, savepointPath + i, 2);
+			JobID jobId = result.f0;
+			client.cancel(jobId);
+			jobId = execute(VERIFY_SAVEPOINT, result.f1, 4).f0;
+			client.cancel(jobId);
+		}
+	}
+
+	private Tuple2<JobID, String> execute(StatefulJobSavepointMigrationITCase.ExecutionMode executionMode,
+										  String savepointPath, int parallelism) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.setRestartStrategy(RestartStrategies.noRestart());
 		env.setParallelism(parallelism);
@@ -65,9 +90,19 @@ public class TopSpeedWindowingSavepointRestoreITCase extends SavepointMigrationT
 		TopSpeedWindowing.setupJob(ParameterTool.fromArgs(new String[] {}), env)
 			.addSink(new MigrationTestUtils.AccumulatorCountingSink<>());
 
-		restoreAndExecute(
-			env,
-			System.getenv("SAVEPOINT_SOURCE"),
-			new Tuple2<>(MigrationTestUtils.AccumulatorCountingSink.NUM_ELEMENTS_ACCUMULATOR, 1));
+		if (executionMode == PERFORM_SAVEPOINT) {
+			return executeAndSavepoint(
+				env,
+				savepointPath,
+				new Tuple2<>(MigrationTestUtils.AccumulatorCountingSink.NUM_ELEMENTS_ACCUMULATOR, 1));
+		} else if (executionMode == VERIFY_SAVEPOINT) {
+			JobID jobID = restoreAndExecute(
+				env,
+				savepointPath,
+				new Tuple2<>(MigrationTestUtils.AccumulatorCountingSink.NUM_ELEMENTS_ACCUMULATOR, 1));
+			return Tuple2.of(jobID, null);
+		} else {
+			throw new IllegalStateException("Unknown ExecutionMode " + executionMode);
+		}
 	}
 }

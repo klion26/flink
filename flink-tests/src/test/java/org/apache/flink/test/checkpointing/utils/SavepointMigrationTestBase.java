@@ -40,7 +40,6 @@ import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.flink.test.util.TestBaseUtils;
 import org.apache.flink.testutils.junit.category.AlsoRunWithLegacyScheduler;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -51,7 +50,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Map;
@@ -135,7 +133,7 @@ public abstract class SavepointMigrationTestBase extends TestBaseUtils {
 	}
 
 	@SafeVarargs
-	protected final void executeAndSavepoint(
+	protected final Tuple2<JobID, String> executeAndSavepoint(
 			StreamExecutionEnvironment env,
 			String savepointPath,
 			Tuple2<String, Integer>... expectedAccumulators) throws Exception {
@@ -165,7 +163,7 @@ public abstract class SavepointMigrationTestBase extends TestBaseUtils {
 				}
 
 				Integer numFinished = (Integer) accumOpt;
-				if (!numFinished.equals(acc.f1)) {
+				if (((int) numFinished) < acc.f1) {
 					allDone = false;
 					break;
 				}
@@ -182,21 +180,24 @@ public abstract class SavepointMigrationTestBase extends TestBaseUtils {
 
 		LOG.info("Triggering savepoint.");
 
-		CompletableFuture<String> savepointPathFuture = client.triggerSavepoint(jobSubmissionResult.getJobID(), null);
+		CompletableFuture<String> savepointPathFuture = client.triggerSavepoint(jobSubmissionResult.getJobID(), savepointPath);
 
 		String jobmanagerSavepointPath = savepointPathFuture.get(deadLine.timeLeft().toMillis(), TimeUnit.MILLISECONDS);
 
-		File jobManagerSavepoint = new File(new URI(jobmanagerSavepointPath).getPath());
-		// savepoints were changed to be directories in Flink 1.3
-		if (jobManagerSavepoint.isDirectory()) {
-			FileUtils.moveDirectory(jobManagerSavepoint, new File(savepointPath));
-		} else {
-			FileUtils.moveFile(jobManagerSavepoint, new File(savepointPath));
-		}
+//		assertEquals(savepointPath, jobmanagerSavepointPath);
+//
+//		File jobManagerSavepoint = new File(new URI(jobmanagerSavepointPath).getPath());
+//		// savepoints were changed to be directories in Flink 1.3
+//		if (jobManagerSavepoint.isDirectory()) {
+//			FileUtils.moveDirectory(jobManagerSavepoint, new File(savepointPath));
+//		} else {
+//			FileUtils.moveFile(jobManagerSavepoint, new File(savepointPath));
+//		}
+		return Tuple2.of(jobSubmissionResult.getJobID(), jobmanagerSavepointPath);
 	}
 
 	@SafeVarargs
-	protected final void restoreAndExecute(
+	protected final JobID restoreAndExecute(
 			StreamExecutionEnvironment env,
 			String savepointPath,
 			Tuple2<String, Integer>... expectedAccumulators) throws Exception {
@@ -211,14 +212,13 @@ public abstract class SavepointMigrationTestBase extends TestBaseUtils {
 		jobGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(savepointPath));
 
 		JobSubmissionResult jobSubmissionResult = ClientUtils.submitJob(client, jobGraph);
+		JobID jobId = jobSubmissionResult.getJobID();
 
 		boolean done = false;
 		while (deadLine.hasTimeLeft()) {
 
 			// try and get a job result, this will fail if the job already failed. Use this
 			// to get out of this loop
-			JobID jobId = jobSubmissionResult.getJobID();
-
 			try {
 				CompletableFuture<JobStatus> jobStatusFuture = client.getJobStatus(jobSubmissionResult.getJobID());
 
@@ -254,5 +254,6 @@ public abstract class SavepointMigrationTestBase extends TestBaseUtils {
 		if (!done) {
 			fail("Did not see the expected accumulator results within time limit.");
 		}
+		return jobId;
 	}
 }
