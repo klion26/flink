@@ -24,8 +24,11 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.contrib.streaming.state.RocksDBStateBackend;
 import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.runtime.state.StateBackendLoader;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
+import org.apache.flink.runtime.state.memory.MemoryStateBackend;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.examples.windowing.TopSpeedWindowing;
 import org.apache.flink.test.checkpointing.utils.MigrationTestUtils;
@@ -63,29 +66,52 @@ public class TopSpeedWindowingSavepointRestoreITCase extends SavepointMigrationT
 			FileSystem.initialize(configuration);
 		}
 
-		execute(VERIFY_SAVEPOINT, savepointPath, 4);
+		String stateBackend = StateBackendLoader.FS_STATE_BACKEND_NAME;
+		execute(VERIFY_SAVEPOINT, stateBackend, savepointPath, 4);
 	}
 
 	@Test
 	public void testSavepoint() throws Exception {
-		String savepointPath = "src/test/resources/topspeedwindowing-";
+		String savepointPath = "src/test/resources/topspeedwindowing";
+		String stateBackend = StateBackendLoader.MEMORY_STATE_BACKEND_NAME;
+//		String stateBackend = StateBackendLoader.FS_STATE_BACKEND_NAME;
+		int savepointParallelism = 2;
+		int restoreParallelism = 4;
+//		int restoreParallelism = 3;
 
 		ClusterClient<?> client = miniClusterResource.getClusterClient();
 		for (int i = 1; ; ++i) {
-			Tuple2<JobID, String> result = execute(PERFORM_SAVEPOINT, savepointPath + i, 2);
+			Tuple2<JobID, String> result =
+				execute(PERFORM_SAVEPOINT, stateBackend, savepointPath, savepointParallelism);
 			JobID jobId = result.f0;
 			client.cancel(jobId);
-			jobId = execute(VERIFY_SAVEPOINT, result.f1, 4).f0;
+			jobId = execute(VERIFY_SAVEPOINT, stateBackend, result.f1, restoreParallelism).f0;
 			client.cancel(jobId);
 		}
 	}
 
-	private Tuple2<JobID, String> execute(StatefulJobSavepointMigrationITCase.ExecutionMode executionMode,
-										  String savepointPath, int parallelism) throws Exception {
+	private Tuple2<JobID, String> execute(
+			StatefulJobSavepointMigrationITCase.ExecutionMode executionMode,
+			String testStateBackend,
+			String savepointPath,
+			int parallelism) throws Exception {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.setRestartStrategy(RestartStrategies.noRestart());
 		env.setParallelism(parallelism);
-		env.setStateBackend(new FsStateBackend(TEMP_FOLDER.newFolder().toURI()));
+
+		switch (testStateBackend) {
+			case StateBackendLoader.ROCKSDB_STATE_BACKEND_NAME:
+				env.setStateBackend(new RocksDBStateBackend(new MemoryStateBackend()));
+				break;
+			case StateBackendLoader.MEMORY_STATE_BACKEND_NAME:
+				env.setStateBackend(new MemoryStateBackend());
+				break;
+			case StateBackendLoader.FS_STATE_BACKEND_NAME:
+				env.setStateBackend(new FsStateBackend(TEMP_FOLDER.newFolder().toURI()));
+				break;
+			default:
+				throw new UnsupportedOperationException();
+		}
 
 		TopSpeedWindowing.setupJob(ParameterTool.fromArgs(new String[] {}), env)
 			.addSink(new MigrationTestUtils.AccumulatorCountingSink<>());
