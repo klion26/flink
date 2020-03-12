@@ -53,6 +53,20 @@ public class TopSpeedWindowing {
 		final ParameterTool params = ParameterTool.fromArgs(args);
 
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+		DataStream<Tuple4<Integer, Integer, Double, Long>> topSpeeds = setupJob(params, env);
+
+		if (params.has("output")) {
+			topSpeeds.writeAsText(params.get("output"));
+		} else {
+			System.out.println("Printing result to stdout. Use --output to specify output path.");
+			topSpeeds.print();
+		}
+
+		env.execute("CarTopSpeedWindowingExample");
+	}
+
+	public static DataStream<Tuple4<Integer, Integer, Double, Long>> setupJob(ParameterTool params,
+																			  StreamExecutionEnvironment env) {
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 		env.getConfig().setGlobalJobParameters(params);
 
@@ -68,7 +82,7 @@ public class TopSpeedWindowing {
 
 		int evictionSec = 10;
 		double triggerMeters = 50;
-		DataStream<Tuple4<Integer, Integer, Double, Long>> topSpeeds = carData
+		return carData
 				.assignTimestampsAndWatermarks(new CarTimestamp())
 				.keyBy(0)
 				.window(GlobalWindows.create())
@@ -81,19 +95,10 @@ public class TopSpeedWindowing {
 							public double getDelta(
 									Tuple4<Integer, Integer, Double, Long> oldDataPoint,
 									Tuple4<Integer, Integer, Double, Long> newDataPoint) {
-								return newDataPoint.f2 - oldDataPoint.f2;
+								return Math.abs(newDataPoint.f2 - oldDataPoint.f2);
 							}
 						}, carData.getType().createSerializer(env.getConfig())))
 				.maxBy(1);
-
-		if (params.has("output")) {
-			topSpeeds.writeAsText(params.get("output"));
-		} else {
-			System.out.println("Printing result to stdout. Use --output to specify output path.");
-			topSpeeds.print();
-		}
-
-		env.execute("CarTopSpeedWindowingExample");
 	}
 
 	// *************************************************************************

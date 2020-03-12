@@ -22,6 +22,7 @@ import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.JobStatus;
 import org.apache.flink.api.common.JobSubmissionResult;
 import org.apache.flink.api.common.time.Deadline;
+import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.client.ClientUtils;
 import org.apache.flink.client.program.ClusterClient;
@@ -102,6 +103,7 @@ public abstract class SavepointMigrationTestBase extends TestBaseUtils {
 				.setConfiguration(getConfiguration())
 				.setNumberTaskManagers(1)
 				.setNumberSlotsPerTaskManager(DEFAULT_PARALLELISM)
+				.setShutdownTimeout(Time.hours(1))
 				.build());
 	}
 
@@ -199,7 +201,7 @@ public abstract class SavepointMigrationTestBase extends TestBaseUtils {
 			String savepointPath,
 			Tuple2<String, Integer>... expectedAccumulators) throws Exception {
 
-		final Deadline deadLine = Deadline.fromNow(Duration.ofMinutes(5));
+		final Deadline deadLine = Deadline.fromNow(Duration.ofHours(1));
 
 		ClusterClient<?> client = miniClusterResource.getClusterClient();
 
@@ -237,7 +239,7 @@ public abstract class SavepointMigrationTestBase extends TestBaseUtils {
 					allDone = false;
 					break;
 				}
-				if (!numFinished.equals(acc.f1)) {
+				if (((int) numFinished) < acc.f1) {
 					allDone = false;
 					break;
 				}

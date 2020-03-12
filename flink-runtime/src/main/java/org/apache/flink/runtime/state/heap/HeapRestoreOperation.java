@@ -121,9 +121,11 @@ public class HeapRestoreOperation<K> implements RestoreOperation<Void> {
 					", but found: " + keyedStateHandle.getClass());
 			}
 
+
 			KeyGroupsStateHandle keyGroupsStateHandle = (KeyGroupsStateHandle) keyedStateHandle;
 			FSDataInputStream fsDataInputStream = keyGroupsStateHandle.openInputStream();
 			cancelStreamRegistry.registerCloseable(fsDataInputStream);
+			System.out.println(keyGroupsStateHandle.toString());
 
 			try {
 				DataInputViewStreamWrapper inView = new DataInputViewStreamWrapper(fsDataInputStream);
