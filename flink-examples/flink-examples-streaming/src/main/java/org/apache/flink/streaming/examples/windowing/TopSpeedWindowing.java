@@ -65,8 +65,9 @@ public class TopSpeedWindowing {
 		env.execute("CarTopSpeedWindowingExample");
 	}
 
-	public static DataStream<Tuple4<Integer, Integer, Double, Long>> setupJob(ParameterTool params,
-																			  StreamExecutionEnvironment env) {
+	public static DataStream<Tuple4<Integer, Integer, Double, Long>> setupJob(
+		ParameterTool params,
+		StreamExecutionEnvironment env) {
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 		env.getConfig().setGlobalJobParameters(params);
 
