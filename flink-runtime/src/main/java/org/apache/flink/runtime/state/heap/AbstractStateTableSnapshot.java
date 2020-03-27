@@ -26,6 +26,9 @@ import org.apache.flink.runtime.state.StateSnapshotTransformer;
 import org.apache.flink.runtime.state.metainfo.StateMetaInfoSnapshot;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -39,6 +42,7 @@ import java.io.IOException;
 abstract class AbstractStateTableSnapshot<K, N, S>
 	implements StateSnapshot, StateSnapshot.StateKeyGroupWriter {
 
+	static final Logger LOG = LoggerFactory.getLogger(AbstractStateTableSnapshot.class);
 	/**
 	 * The {@link StateTable} from which this snapshot was created.
 	 */

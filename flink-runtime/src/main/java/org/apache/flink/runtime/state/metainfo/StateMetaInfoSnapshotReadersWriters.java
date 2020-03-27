@@ -26,6 +26,9 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 
 import java.io.IOException;
@@ -39,6 +42,7 @@ import java.util.Map;
  */
 public class StateMetaInfoSnapshotReadersWriters {
 
+	static final Logger LOG = LoggerFactory.getLogger(StateMetaInfoSnapshotReadersWriters.class);
 	private StateMetaInfoSnapshotReadersWriters() {}
 
 	/**
@@ -167,22 +171,30 @@ public class StateMetaInfoSnapshotReadersWriters {
 			final Map<String, TypeSerializerSnapshot<?>> serializerConfigSnapshotsMap =
 				snapshot.getSerializerSnapshotsImmutable();
 
+//			LOG.info("#writeStateMetaInfoSnapshot# name[{}], type[{}], map[{}]====================", snapshot.getName(), snapshot.getBackendStateType(), optionsMap.size());
 			outputView.writeUTF(snapshot.getName());
 			outputView.writeInt(snapshot.getBackendStateType().ordinal());
 			outputView.writeInt(optionsMap.size());
 			for (Map.Entry<String, String> entry : optionsMap.entrySet()) {
 				outputView.writeUTF(entry.getKey());
 				outputView.writeUTF(entry.getValue());
+//				LOG.info("#writeStateMetaInfoSnapshot# [{}/{}].", entry.getKey(), entry.getValue());
 			}
 
 			outputView.writeInt(serializerConfigSnapshotsMap.size());
+//			LOG.info("#writeStateMetaInfoSnapshot# snapshotMap[{}].", serializerConfigSnapshotsMap.size());
 			for (Map.Entry<String, TypeSerializerSnapshot<?>> entry : serializerConfigSnapshotsMap.entrySet()) {
 				final String key = entry.getKey();
 				outputView.writeUTF(entry.getKey());
 
+//				LOG.info("#writeStateMetaInfoSnapshot# key[{}] snapshot [{}], serializer [{}].",
+//					entry.getKey(),
+//					entry.getValue(),
+//					snapshot.getTypeSerializer(key));
 				TypeSerializerSnapshotSerializationUtil.writeSerializerSnapshot(
 					outputView, (TypeSerializerSnapshot) entry.getValue(), snapshot.getTypeSerializer(key));
 			}
+//			LOG.info("#writeStateMetaInfoSnapshot# {}]====================", snapshot);
 		}
 	}
 
@@ -203,24 +215,32 @@ public class StateMetaInfoSnapshotReadersWriters {
 			final StateMetaInfoSnapshot.BackendStateType stateType =
 				StateMetaInfoSnapshot.BackendStateType.values()[inputView.readInt()];
 			final int numOptions = inputView.readInt();
+//			LOG.info("#readStateMetaInfoSnapshot# name[{}], type[{}], map[{}]====================", stateName, stateType,numOptions);
 			HashMap<String, String> optionsMap = new HashMap<>(numOptions);
 			for (int i = 0; i < numOptions; ++i) {
 				String key = inputView.readUTF();
 				String value = inputView.readUTF();
 				optionsMap.put(key, value);
+//				LOG.info("#readStateMetaInfoSnapshot# key/value [{}/{}].", key, value);
 			}
 
 			final int numSerializerConfigSnapshots = inputView.readInt();
 			final HashMap<String, TypeSerializerSnapshot<?>> serializerConfigsMap = new HashMap<>(numSerializerConfigSnapshots);
 
+//			LOG.info("#readStateMetaInfoSnapshot# configSnapshots [{}].", numSerializerConfigSnapshots);
 			for (int i = 0; i < numSerializerConfigSnapshots; ++i) {
+				String key = inputView.readUTF();
 				serializerConfigsMap.put(
-					inputView.readUTF(),
+					key,
 					TypeSerializerSnapshotSerializationUtil.readSerializerSnapshot(
 						inputView, userCodeClassLoader, null));
+//				LOG.info("#readStateMetaInfoSnapshot# key/value [{}/{}].", key, serializerConfigsMap.get(key));
 			}
+//			LOG.info("#readStateMetaInfoSnapshot# name[{}], type[{}], map[{}]====================", stateName, stateType,numOptions);
 
-			return new StateMetaInfoSnapshot(stateName, stateType, optionsMap, serializerConfigsMap);
+			StateMetaInfoSnapshot metaInfoSnapshot = new StateMetaInfoSnapshot(stateName, stateType, optionsMap, serializerConfigsMap);
+//			LOG.info("#readStateMetaInfoSnapshot# {}.", metaInfoSnapshot);
+			return metaInfoSnapshot;
 		}
 	}
 

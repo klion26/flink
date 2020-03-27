@@ -28,6 +28,9 @@ import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.util.MathUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 
 import java.io.IOException;
@@ -43,6 +46,7 @@ import java.util.Objects;
 @Internal
 public class TimerSerializer<K, N> extends TypeSerializer<TimerHeapInternalTimer<K, N>> {
 
+	static final Logger LOG = LoggerFactory.getLogger(TimerSerializer.class);
 	private static final long serialVersionUID = 1L;
 
 	private static final int KEY_SERIALIZER_SNAPSHOT_INDEX = 0;
@@ -156,6 +160,7 @@ public class TimerSerializer<K, N> extends TypeSerializer<TimerHeapInternalTimer
 
 	@Override
 	public void serialize(TimerHeapInternalTimer<K, N> record, DataOutputView target) throws IOException {
+		LOG.info("Serializer#Timer timestamp{}, key{}, namespace{}.", record.getTimestamp(), record.getKey(), record.getNamespace());
 		target.writeLong(MathUtils.flipSignBit(record.getTimestamp()));
 		keySerializer.serialize(record.getKey(), target);
 		namespaceSerializer.serialize(record.getNamespace(), target);
@@ -166,6 +171,7 @@ public class TimerSerializer<K, N> extends TypeSerializer<TimerHeapInternalTimer
 		long timestamp = MathUtils.flipSignBit(source.readLong());
 		K key = keySerializer.deserialize(source);
 		N namespace = namespaceSerializer.deserialize(source);
+		LOG.info("Deserializer#Timer timestamp{}, key{}, namespace{}.", timestamp, key, source);
 		return new TimerHeapInternalTimer<>(timestamp, key, namespace);
 	}
 

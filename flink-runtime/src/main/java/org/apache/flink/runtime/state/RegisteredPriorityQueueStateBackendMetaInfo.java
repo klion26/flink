@@ -24,6 +24,9 @@ import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.flink.runtime.state.metainfo.StateMetaInfoSnapshot;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -35,6 +38,7 @@ import java.util.Map;
  */
 public class RegisteredPriorityQueueStateBackendMetaInfo<T> extends RegisteredStateMetaInfoBase {
 
+	static final Logger LOG = LoggerFactory.getLogger(RegisteredPriorityQueueStateBackendMetaInfo.class);
 	@Nonnull
 	private final StateSerializerProvider<T> elementSerializerProvider;
 
@@ -62,6 +66,7 @@ public class RegisteredPriorityQueueStateBackendMetaInfo<T> extends RegisteredSt
 
 		super(name);
 		this.elementSerializerProvider = elementSerializerProvider;
+		LOG.info("RegisteredPriorityQueueStateBackendMetaInfo, ele[{}].", elementSerializerProvider, new RuntimeException("EEEEEEEEE"));
 	}
 
 	@Nonnull

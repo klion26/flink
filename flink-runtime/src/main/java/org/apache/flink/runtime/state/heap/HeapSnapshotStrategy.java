@@ -45,6 +45,9 @@ import org.apache.flink.runtime.state.metainfo.StateMetaInfoSnapshot;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.function.SupplierWithException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -63,6 +66,7 @@ import java.util.concurrent.RunnableFuture;
 class HeapSnapshotStrategy<K>
 	extends AbstractSnapshotStrategy<KeyedStateHandle> implements SnapshotStrategySynchronicityBehavior<K> {
 
+	private static final Logger LOG = LoggerFactory.getLogger(HeapSnapshotStrategy.class);
 	private final SnapshotStrategySynchronicityBehavior<K> snapshotStrategySynchronicityTrait;
 	private final Map<String, StateTable<K, ?, ?>> registeredKVStates;
 	private final Map<String, HeapPriorityQueueSnapshotRestoreWrapper> registeredPQStates;
@@ -168,7 +172,9 @@ class HeapSnapshotStrategy<K>
 						streamWithResultProvider.getCheckpointOutputStream();
 
 					final DataOutputViewStreamWrapper outView = new DataOutputViewStreamWrapper(localStream);
+					LOG.info("Snapshot before Prox write" + localStream.getPos());
 					serializationProxy.write(outView);
+					LOG.info("Snapshot after Prox write" + localStream.getPos());
 
 					final long[] keyGroupRangeOffsets = new long[keyGroupRange.getNumberOfKeyGroups()];
 
@@ -176,6 +182,7 @@ class HeapSnapshotStrategy<K>
 						int keyGroupId = keyGroupRange.getKeyGroupId(keyGroupPos);
 						keyGroupRangeOffsets[keyGroupPos] = localStream.getPos();
 						outView.writeInt(keyGroupId);
+						LOG.info("Snapshot keyGroup[{}] offset [{}].", keyGroupId, keyGroupRangeOffsets[keyGroupPos]);
 
 						for (Map.Entry<StateUID, StateSnapshot> stateSnapshot :
 							cowStateStableSnapshots.entrySet()) {
@@ -188,6 +195,7 @@ class HeapSnapshotStrategy<K>
 								DataOutputViewStreamWrapper kgCompressionView =
 									new DataOutputViewStreamWrapper(kgCompressionOut);
 								kgCompressionView.writeShort(stateNamesToId.get(stateSnapshot.getKey()));
+								LOG.info("Snapshot kvStateId {}.", stateNamesToId.get(stateSnapshot.getKey()));
 								partitionedSnapshot.writeStateInKeyGroup(kgCompressionView, keyGroupId);
 							} // this will just close the outer compression stream
 						}

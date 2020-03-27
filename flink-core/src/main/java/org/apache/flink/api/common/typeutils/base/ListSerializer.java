@@ -24,6 +24,9 @@ import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +45,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 @Internal
 public final class ListSerializer<T> extends TypeSerializer<List<T>> {
 
+	static final Logger LOG = LoggerFactory.getLogger(ListSerializer.class);
 	private static final long serialVersionUID = 1119562170939152304L;
 
 	/** The serializer for the elements of the list. */
@@ -119,18 +123,22 @@ public final class ListSerializer<T> extends TypeSerializer<List<T>> {
 		// We iterate here rather than accessing by index, because we cannot be sure that
 		// the given list supports RandomAccess.
 		// The Iterator should be stack allocated on new JVMs (due to escape analysis)
+		LOG.info("Serialize#List# numElement {}.", size);
 		for (T element : list) {
 			elementSerializer.serialize(element, target);
+			LOG.info("Serialize#List# element {}/pos[{}].", element, target);
 		}
 	}
 
 	@Override
 	public List<T> deserialize(DataInputView source) throws IOException {
 		final int size = source.readInt();
+		LOG.info("Deserialize#List# size {}.", size);
 		// create new list with (size + 1) capacity to prevent expensive growth when a single element is added
 		final List<T> list = new ArrayList<>(size + 1);
 		for (int i = 0; i < size; i++) {
 			list.add(elementSerializer.deserialize(source));
+			LOG.info("Deserialize#List# element {}.", list.get(i));
 		}
 		return list;
 	}

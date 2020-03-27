@@ -19,6 +19,9 @@
 package org.apache.flink.runtime.state.heap;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.flink.api.common.typeutils.TypeSerializerSchemaCompatibility;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.core.fs.CloseableRegistry;
@@ -61,6 +64,7 @@ import java.util.Map;
  * @param <K> The data type that the serializer serializes.
  */
 public class HeapRestoreOperation<K> implements RestoreOperation<Void> {
+	private static final Logger LOG = LoggerFactory.getLogger(HeapRestoreOperation.class);
 	private final Collection<KeyedStateHandle> restoreStateHandles;
 	private final StateSerializerProvider<K> keySerializerProvider;
 	private final ClassLoader userCodeClassLoader;
@@ -125,7 +129,7 @@ public class HeapRestoreOperation<K> implements RestoreOperation<Void> {
 			KeyGroupsStateHandle keyGroupsStateHandle = (KeyGroupsStateHandle) keyedStateHandle;
 			FSDataInputStream fsDataInputStream = keyGroupsStateHandle.openInputStream();
 			cancelStreamRegistry.registerCloseable(fsDataInputStream);
-			System.out.println(keyGroupsStateHandle.toString());
+			LOG.info("Restore keyGroupHandle {}, ", keyGroupsStateHandle);
 
 			try {
 				DataInputViewStreamWrapper inView = new DataInputViewStreamWrapper(fsDataInputStream);
@@ -133,8 +137,10 @@ public class HeapRestoreOperation<K> implements RestoreOperation<Void> {
 				KeyedBackendSerializationProxy<K> serializationProxy =
 					new KeyedBackendSerializationProxy<>(userCodeClassLoader);
 
+				LOG.info("Before proxy read, pos [{}].", fsDataInputStream.getPos());
 				serializationProxy.read(inView);
 
+				LOG.info("After proxy read, pos [{}] / metainfo[{}]", fsDataInputStream.getPos(), serializationProxy.getStateMetaInfoSnapshots());
 				if (!keySerializerRestored) {
 					// check for key serializer compatibility; this also reconfigures the
 					// key serializer to be compatible, if it is required and is possible
@@ -241,6 +247,8 @@ public class HeapRestoreOperation<K> implements RestoreOperation<Void> {
 			int keyGroupIndex = groupOffset.f0;
 			long offset = groupOffset.f1;
 
+			LOG.info("Restore keyGroup [{}] with offset [{}], readVersion [{}].", keyGroupIndex, offset, readVersion);
+
 			// Check that restored key groups all belong to the backend.
 			Preconditions.checkState(keyGroupRange.contains(keyGroupIndex), "The key group must belong to the backend.");
 
@@ -272,23 +280,28 @@ public class HeapRestoreOperation<K> implements RestoreOperation<Void> {
 
 		DataInputViewStreamWrapper inView =
 			new DataInputViewStreamWrapper(inputStream);
-
+		int kvStateId;
 		for (int i = 0; i < numStates; i++) {
 
-			final int kvStateId = inView.readShort();
+			kvStateId = inView.readShort();
 			final StateMetaInfoSnapshot stateMetaInfoSnapshot = kvStatesById.get(kvStateId);
 			final StateSnapshotRestore registeredState;
 
-			switch (stateMetaInfoSnapshot.getBackendStateType()) {
-				case KEY_VALUE:
-					registeredState = registeredKVStates.get(stateMetaInfoSnapshot.getName());
-					break;
-				case PRIORITY_QUEUE:
-					registeredState = registeredPQStates.get(stateMetaInfoSnapshot.getName());
-					break;
-				default:
-					throw new IllegalStateException("Unexpected state type: " +
-						stateMetaInfoSnapshot.getBackendStateType() + ".");
+			try {
+				switch (stateMetaInfoSnapshot.getBackendStateType()) {
+					case KEY_VALUE:
+						registeredState = registeredKVStates.get(stateMetaInfoSnapshot.getName());
+						break;
+					case PRIORITY_QUEUE:
+						registeredState = registeredPQStates.get(stateMetaInfoSnapshot.getName());
+						break;
+					default:
+						throw new IllegalStateException("Unexpected state type: " +
+							stateMetaInfoSnapshot.getBackendStateType() + ".");
+				}
+			}  catch (Exception e) {
+				LOG.info("Exception ## {}/{}/{}.", stateMetaInfoSnapshot, stateMetaInfoSnapshot != null ? stateMetaInfoSnapshot.getBackendStateType() : "null", kvStateId, e);
+				throw e;
 			}
 
 			StateSnapshotKeyGroupReader keyGroupReader = registeredState.keyGroupReader(readVersion);

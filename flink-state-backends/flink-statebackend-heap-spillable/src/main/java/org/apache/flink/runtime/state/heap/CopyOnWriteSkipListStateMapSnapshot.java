@@ -24,6 +24,9 @@ import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.runtime.state.StateSnapshotTransformer;
 import org.apache.flink.util.ResourceGuard;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,6 +49,7 @@ import static org.apache.flink.runtime.state.heap.SkipListUtils.NIL_VALUE_POINTE
 public class CopyOnWriteSkipListStateMapSnapshot<K, N, S>
 	extends StateMapSnapshot<K, N, S, CopyOnWriteSkipListStateMap<K, N, S>> {
 
+	private static final Logger LOG = LoggerFactory.getLogger(CopyOnWriteSkipListStateMapSnapshot.class);
 	/**
 	 * Version of the {@link CopyOnWriteSkipListStateMap} when this snapshot was created. This can be used to release the snapshot.
 	 */
@@ -96,6 +100,7 @@ public class CopyOnWriteSkipListStateMapSnapshot<K, N, S>
 		TypeSerializer<S> stateSerializer,
 		@Nonnull DataOutputView dov,
 		@Nullable StateSnapshotTransformer<S> stateSnapshotTransformer) throws IOException {
+		LOG.info("CopyOnWriteSkipListStateMapSnapshot.");
 		if (stateSnapshotTransformer == null) {
 			writeStateWithNoTransform(dov);
 		} else {

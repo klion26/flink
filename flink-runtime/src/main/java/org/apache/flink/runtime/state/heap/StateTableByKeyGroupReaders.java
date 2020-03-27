@@ -24,6 +24,9 @@ import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.runtime.state.KeyGroupPartitioner;
 import org.apache.flink.runtime.state.StateSnapshotKeyGroupReader;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 
@@ -81,6 +84,7 @@ class StateTableByKeyGroupReaders {
 
 	static final class StateTableByKeyGroupReaderV1<K, N, S> implements StateSnapshotKeyGroupReader {
 
+		private static final Logger LOG = LoggerFactory.getLogger(StateTableByKeyGroupReaderV1.class);
 		protected final StateTable<K, N, S> stateTable;
 		protected final TypeSerializer<K> keySerializer;
 

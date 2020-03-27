@@ -22,6 +22,9 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.runtime.state.StateSnapshotTransformer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -39,6 +42,7 @@ import java.util.Map;
 public class NestedStateMapSnapshot<K, N, S>
 	extends StateMapSnapshot<K, N, S, NestedStateMap<K, N, S>> {
 
+	private static final Logger LOG = LoggerFactory.getLogger(NestedStateMapSnapshot.class);
 	/**
 	 * Creates a new {@link NestedStateMapSnapshot}.
 	 *
@@ -58,6 +62,7 @@ public class NestedStateMapSnapshot<K, N, S>
 		Map<N, Map<K, S>> mappings = filterMappingsIfNeeded(owningStateMap.getNamespaceMap(), stateSnapshotTransformer);
 		int numberOfEntries = countMappingsInKeyGroup(mappings);
 
+		LOG.info("NestedStateMapSnapshot....");
 		dov.writeInt(numberOfEntries);
 		for (Map.Entry<N, Map<K, S>> namespaceEntry : mappings.entrySet()) {
 			N namespace = namespaceEntry.getKey();

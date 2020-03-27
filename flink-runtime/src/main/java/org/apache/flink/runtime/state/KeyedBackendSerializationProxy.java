@@ -32,6 +32,9 @@ import org.apache.flink.runtime.state.metainfo.StateMetaInfoSnapshot;
 import org.apache.flink.runtime.state.metainfo.StateMetaInfoSnapshotReadersWriters;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,6 +49,7 @@ import static org.apache.flink.runtime.state.metainfo.StateMetaInfoSnapshotReade
  */
 public class KeyedBackendSerializationProxy<K> extends VersionedIOReadableWritable {
 
+	static final Logger LOG = LoggerFactory.getLogger(KeyedBackendSerializationProxy.class);
 	public static final int VERSION = 6;
 
 	private static final Map<Integer, Integer> META_INFO_SNAPSHOT_FORMAT_VERSION_MAPPER = new HashMap<>();
@@ -122,7 +126,9 @@ public class KeyedBackendSerializationProxy<K> extends VersionedIOReadableWritab
 
 		// write individual registered keyed state metainfos
 		out.writeShort(stateMetaInfoSnapshots.size());
+//		LOG.info("Write out {}/ {} metas, compress [{}].", getVersion(), stateMetaInfoSnapshots.size(), usingKeyGroupCompression);
 		for (StateMetaInfoSnapshot metaInfoSnapshot : stateMetaInfoSnapshots) {
+//			LOG.info("Snapshot MetaInfo## infoSnapshot {}/{}.", metaInfoSnapshot.getName(), metaInfoSnapshot);
 			StateMetaInfoSnapshotReadersWriters.getWriter().writeStateMetaInfoSnapshot(metaInfoSnapshot, out);
 		}
 	}
@@ -165,10 +171,12 @@ public class KeyedBackendSerializationProxy<K> extends VersionedIOReadableWritab
 
 		int numKvStates = in.readShort();
 		stateMetaInfoSnapshots = new ArrayList<>(numKvStates);
+//		LOG.info("Restored [{}] metas.", numKvStates);
 		for (int i = 0; i < numKvStates; i++) {
 			StateMetaInfoSnapshot snapshot = stateMetaInfoReader.readStateMetaInfoSnapshot(in, userCodeClassLoader);
 
 			stateMetaInfoSnapshots.add(snapshot);
+//			LOG.info("Restored metaSnapshot {}.", snapshot);
 		}
 	}
 }

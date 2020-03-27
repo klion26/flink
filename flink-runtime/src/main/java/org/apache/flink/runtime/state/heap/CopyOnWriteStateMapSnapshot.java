@@ -24,6 +24,9 @@ import org.apache.flink.runtime.state.StateEntry;
 import org.apache.flink.runtime.state.StateSnapshotTransformer;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -53,6 +56,7 @@ import java.util.Objects;
 public class CopyOnWriteStateMapSnapshot<K, N, S>
 	extends StateMapSnapshot<K, N, S, CopyOnWriteStateMap<K, N, S>> {
 
+	private static final Logger LOG = LoggerFactory.getLogger(CopyOnWriteStateMapSnapshot.class);
 	/**
 	 * Version of the {@link CopyOnWriteStateMap} when this snapshot was created. This can be used to release the snapshot.
 	 */
@@ -121,12 +125,20 @@ public class CopyOnWriteStateMapSnapshot<K, N, S>
 			new TransformedSnapshotIterator<>(numberOfEntriesInSnapshotData, snapshotData, stateSnapshotTransformer);
 
 		int size = snapshotIterator.size();
+		LOG.info("CopyOnWriteStateMapSnapshot, size{}, snapshotIterator [{}], .", size, snapshotIterator);
 		dov.writeInt(size);
 		while (snapshotIterator.hasNext()) {
 			StateEntry<K, N, S> stateEntry = snapshotIterator.next();
 			namespaceSerializer.serialize(stateEntry.getNamespace(), dov);
 			keySerializer.serialize(stateEntry.getKey(), dov);
 			stateSerializer.serialize(stateEntry.getState(), dov);
+			LOG.info("CopyOnWriteStateMapSnapshot serialize state data, serializer [{}/{}/{}] namespace [{}], key [{}], value [{}].",
+				namespaceSerializer,
+				keySerializer,
+				stateSerializer,
+				stateEntry.getNamespace(),
+				stateEntry.getKey(),
+				stateEntry.getState());
 		}
 	}
 

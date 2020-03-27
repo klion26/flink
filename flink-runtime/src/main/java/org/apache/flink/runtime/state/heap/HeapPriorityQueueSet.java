@@ -24,6 +24,9 @@ import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
 import org.apache.flink.runtime.state.KeyGroupedInternalPriorityQueue;
 import org.apache.flink.runtime.state.PriorityComparator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -50,6 +53,7 @@ public class HeapPriorityQueueSet<T extends HeapPriorityQueueElement>
 	extends HeapPriorityQueue<T>
 	implements KeyGroupedInternalPriorityQueue<T> {
 
+	static final Logger LOG = LoggerFactory.getLogger(HeapPriorityQueueSet.class);
 	/**
 	 * Function to extract the key from contained elements.
 	 */
@@ -151,11 +155,17 @@ public class HeapPriorityQueueSet<T extends HeapPriorityQueueElement>
 		int keyGroup = KeyGroupRangeAssignment.assignToKeyGroup(
 			keyExtractor.extractKeyFromElement(element),
 			totalNumberOfKeyGroups);
+		LOG.info("Restore#Element {} keygroup {}.", element, keyGroup);
 		return getDedupMapForKeyGroup(keyGroup);
 	}
 
 	private int globalKeyGroupToLocalIndex(int keyGroup) {
-		checkArgument(keyGroupRange.contains(keyGroup), "%s does not contain key group %s", keyGroupRange, keyGroup);
+		try {
+			checkArgument(keyGroupRange.contains(keyGroup), "%s does not contain key group %s", keyGroupRange, keyGroup);
+		} catch (Exception e) {
+			LOG.info("globalKeyGroupToLocalIndex Exception", e);
+			throw e;
+		}
 		return keyGroup - keyGroupRange.getStartKeyGroup();
 	}
 

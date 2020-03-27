@@ -29,6 +29,7 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Generalized snapshot for meta information about one state in a state backend
@@ -161,5 +162,14 @@ public class StateMetaInfoSnapshot {
 	@Nullable
 	public TypeSerializer<?> getTypeSerializer(@Nonnull String key) {
 		return serializers.get(key);
+	}
+
+	@Override
+	public String toString() {
+		return "name=" + name +
+			",type=" + backendStateType +
+			",options=" + options +
+			",serializerSnapshots=" + serializerSnapshots +
+			",serializers=" + serializers;
 	}
 }

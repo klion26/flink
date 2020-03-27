@@ -24,6 +24,9 @@ import org.apache.flink.runtime.state.AsyncSnapshotCallable.AsyncSnapshotTask;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -35,6 +38,7 @@ import java.util.concurrent.RunnableFuture;
  */
 public class StateSnapshotContextSynchronousImpl implements StateSnapshotContext {
 
+	static final Logger LOG = LoggerFactory.getLogger(StateSnapshotContextSynchronousImpl.class);
 	/** Checkpoint id of the snapshot. */
 	private final long checkpointId;
 

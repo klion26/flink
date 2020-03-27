@@ -205,6 +205,7 @@ public interface CheckpointStreamWithResultProvider extends Closeable {
 			KeyedStateHandle jmKeyedState = new KeyGroupsStateHandle(keyGroupRangeOffsets, jobManagerOwnedSnapshot);
 			StreamStateHandle taskLocalSnapshot = snapshotResult.getTaskLocalSnapshot();
 
+			LOG.info("Snapshot {}.", jmKeyedState);
 			if (taskLocalSnapshot != null) {
 
 				KeyedStateHandle localKeyedState = new KeyGroupsStateHandle(keyGroupRangeOffsets, taskLocalSnapshot);

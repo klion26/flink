@@ -21,7 +21,16 @@ package org.apache.flink.streaming.api.operators;
 import org.apache.flink.api.common.typeutils.SerializerTestBase;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.base.LongSerializer;
+import org.apache.flink.core.memory.ByteArrayOutputStreamWithPos;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
+import org.apache.flink.util.MathUtils;
+
+import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Test for {@link TimerSerializer}.
@@ -58,5 +67,14 @@ public class TimerSerializerTest extends SerializerTestBase<TimerHeapInternalTim
 			new TimerHeapInternalTimer<>(Long.MAX_VALUE, Long.MIN_VALUE, new TimeWindow(Long.MAX_VALUE, Long.MIN_VALUE)),
 			new TimerHeapInternalTimer<>(Long.MIN_VALUE, Long.MAX_VALUE, new TimeWindow(Long.MIN_VALUE, Long.MAX_VALUE))
 		};
+	}
+
+	@Test
+	public void testF() throws IOException {
+		System.out.println(MathUtils.flipSignBit(-9223372036837998592L));
+		ByteArrayOutputStreamWithPos outputStreamWithPos = new ByteArrayOutputStreamWithPos(1024);
+		DataOutputStream outputStream = new DataOutputStream(outputStreamWithPos);
+		outputStream.writeLong(MathUtils.flipSignBit(-9223372036837998592L));
+		System.out.println(outputStreamWithPos.getPosition() + ":" + Arrays.toString(outputStreamWithPos.getBuf()));
 	}
 }

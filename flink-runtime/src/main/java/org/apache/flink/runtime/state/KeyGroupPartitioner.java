@@ -22,6 +22,9 @@ import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -199,6 +202,7 @@ public class KeyGroupPartitioner<T> {
 	 */
 	private static class PartitioningResult<T> implements StateSnapshot.StateKeyGroupWriter {
 
+		static final Logger LOG = LoggerFactory.getLogger(PartitioningResult.class);
 		/**
 		 * Function to write one element to a {@link DataOutputView}.
 		 */
@@ -253,11 +257,13 @@ public class KeyGroupPartitioner<T> {
 			int startOffset = getKeyGroupStartOffsetInclusive(keyGroupId);
 			int endOffset = getKeyGroupEndOffsetExclusive(keyGroupId);
 
+			LOG.info("keyGroupId {}, startOffset{}, endOffset{}", keyGroupId, startOffset, endOffset);
 			// write number of mappings in key-group
 			dov.writeInt(endOffset - startOffset);
 
 			// write mappings
 			for (int i = startOffset; i < endOffset; ++i) {
+				LOG.info("KeyGroupPartitioner# keyGroupId [{}], elements [{}].", keyGroupId, partitionedElements[i]);
 				elementWriterFunction.writeElement(partitionedElements[i], dov);
 			}
 		}
@@ -276,6 +282,7 @@ public class KeyGroupPartitioner<T> {
 	 */
 	private static class PartitioningResultKeyGroupReader<T> implements StateSnapshotKeyGroupReader {
 
+		static final Logger LOG = LoggerFactory.getLogger(PartitioningResultKeyGroupReader.class);
 		@Nonnull
 		private final ElementReaderFunction<T> readerFunction;
 
@@ -293,8 +300,10 @@ public class KeyGroupPartitioner<T> {
 		@Override
 		public void readMappingsInKeyGroup(@Nonnull DataInputView in, @Nonnegative int keyGroupId) throws IOException {
 			int numElements = in.readInt();
+			LOG.info("PartitioningResultKeyGroupReader#readMappingsInKeyGroup numElements {}, readFunction {}.", numElements, readerFunction);
 			for (int i = 0; i < numElements; i++) {
 				T element = readerFunction.readElement(in);
+				LOG.info("PartitioningResultKeyGroupReader#readMappingsInKeyGroup {}, numElements {}.", element, numElements);
 				elementConsumer.consume(element, keyGroupId);
 			}
 		}

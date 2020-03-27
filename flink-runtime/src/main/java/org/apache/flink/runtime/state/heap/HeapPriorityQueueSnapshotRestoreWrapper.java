@@ -27,6 +27,9 @@ import org.apache.flink.runtime.state.StateSnapshot;
 import org.apache.flink.runtime.state.StateSnapshotKeyGroupReader;
 import org.apache.flink.runtime.state.StateSnapshotRestore;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 
@@ -38,6 +41,8 @@ import javax.annotation.Nonnull;
 public class HeapPriorityQueueSnapshotRestoreWrapper<T extends HeapPriorityQueueElement>
 	implements StateSnapshotRestore {
 
+	static final Logger LOG = LoggerFactory.getLogger(HeapPriorityQueueSnapshotRestoreWrapper.class);
+
 	@Nonnull
 	private final HeapPriorityQueueSet<T> priorityQueue;
 	@Nonnull
@@ -48,6 +53,7 @@ public class HeapPriorityQueueSnapshotRestoreWrapper<T extends HeapPriorityQueue
 	private final KeyGroupRange localKeyGroupRange;
 	@Nonnegative
 	private final int totalKeyGroups;
+//	private final RuntimeException e;
 
 	public HeapPriorityQueueSnapshotRestoreWrapper(
 		@Nonnull HeapPriorityQueueSet<T> priorityQueue,
@@ -61,6 +67,8 @@ public class HeapPriorityQueueSnapshotRestoreWrapper<T extends HeapPriorityQueue
 		this.metaInfo = metaInfo;
 		this.localKeyGroupRange = localKeyGroupRange;
 		this.totalKeyGroups = totalKeyGroups;
+//		e = new RuntimeException("StackException.");
+//		LOG.info("HeapPriorityQueueSnapshotRestoreWrapper#", e);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -68,6 +76,7 @@ public class HeapPriorityQueueSnapshotRestoreWrapper<T extends HeapPriorityQueue
 	@Override
 	public StateSnapshot stateSnapshot() {
 		final T[] queueDump = (T[]) priorityQueue.toArray(new HeapPriorityQueueElement[priorityQueue.size()]);
+		LOG.info("Snapshot# keyGroups {}, queu{}", localKeyGroupRange, queueDump);
 		return new HeapPriorityQueueStateSnapshot<>(
 			queueDump,
 			keyExtractorFunction,
@@ -80,6 +89,7 @@ public class HeapPriorityQueueSnapshotRestoreWrapper<T extends HeapPriorityQueue
 	@Override
 	public StateSnapshotKeyGroupReader keyGroupReader(int readVersionHint) {
 		final TypeSerializer<T> elementSerializer = metaInfo.getElementSerializer();
+		LOG.info("keyGroupReader ##### elementSerializer {}/metaInfo {}.", elementSerializer, metaInfo);
 		return KeyGroupPartitioner.createKeyGroupPartitionReader(
 			elementSerializer::deserialize, //we know that this does not deliver nulls, because we never write nulls
 			(element, keyGroupId) -> priorityQueue.add(element));
