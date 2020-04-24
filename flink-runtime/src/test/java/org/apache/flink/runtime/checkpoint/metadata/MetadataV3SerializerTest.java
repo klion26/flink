@@ -51,8 +51,6 @@ public class MetadataV3SerializerTest {
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-	private String savepointPath = null;
-
 	@Test
 	public void testCheckpointWithNoState() throws Exception {
 		final Random rnd = new Random();
@@ -86,13 +84,11 @@ public class MetadataV3SerializerTest {
 
 	@Test
 	public void testCheckpointWithOnlyTaskStateForCheckpoint() throws Exception {
-		savepointPath = null;
 		testCheckpointWithOnlyTaskState(null);
 	}
 	@Test
 	public void testCheckpointWithOnlyTaskStateForSavepoint() throws Exception {
-		savepointPath = temporaryFolder.newFolder().toURI().toString();
-		testCheckpointWithOnlyTaskState(savepointPath);
+		testCheckpointWithOnlyTaskState(temporaryFolder.newFolder().toURI().toString());
 	}
 
 	private void testCheckpointWithOnlyTaskState(String basePath) throws Exception {
@@ -168,6 +164,7 @@ public class MetadataV3SerializerTest {
 		CheckpointMetadata metadata = new CheckpointMetadata(checkpointId, operatorStates, masterStates);
 		MetadataV3Serializer.serialize(metadata, out);
 		Path metaPath = null;
+		// add this because we need to resolve the checkpoint pointer in MetadataV2V3SerializerBase.
 		if (basePath != null) {
 			metaPath = new Path(basePath, "_metadata");
 			metaPath.getFileSystem().create(metaPath, FileSystem.WriteMode.OVERWRITE);

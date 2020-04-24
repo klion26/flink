@@ -99,6 +99,7 @@ public abstract class MetadataV2V3SerializerBase {
 	private static final byte RELATIVE_STREAM_STATE_HANDLE = 6;
 
 	private static Path exclusiveCheckpointDir = null;
+	private static String previousExternalPointer = null;
 
 	// ------------------------------------------------------------------------
 	//  (De)serialization entry points
@@ -504,10 +505,11 @@ public abstract class MetadataV2V3SerializerBase {
 			checkArgument(externalPointer != null, "external pointer should not be null when deserializing relative state handle.");
 			String relativePath = dis.readUTF();
 			long size = dis.readLong();
-			if (exclusiveCheckpointDir == null) {
+			if (exclusiveCheckpointDir == null || (!externalPointer.equals(previousExternalPointer))) {
 				exclusiveCheckpointDir = ((FsCompletedCheckpointStorageLocation) (AbstractFsCheckpointStorage.resolveCheckpointPointer(externalPointer))).getExclusiveCheckpointDir();
 				EntropyInjectingFileSystem entropyFs = EntropyInjector.getEntropyFs(exclusiveCheckpointDir.getFileSystem());
 				checkState(entropyFs == null, "Do not support relative state handle for entropy file system currently.");
+				previousExternalPointer = externalPointer;
 			}
 			Path statePath = new Path(exclusiveCheckpointDir, relativePath);
 			return new RelativeFileStateHandle(statePath, relativePath, size);
