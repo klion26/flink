@@ -45,7 +45,8 @@ object EnumValueSerializerUpgradeTest {
 
   @Parameterized.Parameters(name = "Test Specification = {0}")
   def testSpecifications(): util.Collection[TestSpecification[_, _]] = {
-    val testSpecifications = new util.ArrayList[TypeSerializerUpgradeTestBase.TestSpecification[_, _]]
+    val testSpecifications =
+      new util.ArrayList[TypeSerializerUpgradeTestBase.TestSpecification[_, _]]
 
     for (migrationVersion <- TypeSerializerUpgradeTestBase.migrationVersions) {
       testSpecifications.add(
@@ -60,19 +61,24 @@ object EnumValueSerializerUpgradeTest {
   }
 
   /**
-   * This class is only public to work with [[org.apache.flink.api.common.typeutils.ClassRelocator]].
+   * This class is only public to work with
+   * [[org.apache.flink.api.common.typeutils.ClassRelocator]].
    */
-  final class EnumValueSerializerSetup extends TypeSerializerUpgradeTestBase.PreUpgradeSetup[Letters.Value] {
+  final class EnumValueSerializerSetup
+      extends TypeSerializerUpgradeTestBase.PreUpgradeSetup[Letters.Value] {
     override def createPriorSerializer: TypeSerializer[Letters.Value] = supplier.get()
 
     override def createTestData: Letters.Value = Letters.A
   }
 
-  final class EnumValueSerializerVerifier extends TypeSerializerUpgradeTestBase.UpgradeVerifier[Letters.Value] {
+  final class EnumValueSerializerVerifier extends
+      TypeSerializerUpgradeTestBase.UpgradeVerifier[Letters.Value] {
     override def createUpgradedSerializer: TypeSerializer[Letters.Value] = supplier.get()
 
     override def testDataMatcher: Matcher[Letters.Value] = is(Letters.A)
 
-    override def schemaCompatibilityMatcher: Matcher[TypeSerializerSchemaCompatibility[Letters.Value]] = TypeSerializerMatchers.isCompatibleAsIs[Letters.Value]()
+    override def schemaCompatibilityMatcher:
+        Matcher[TypeSerializerSchemaCompatibility[Letters.Value]] =
+      TypeSerializerMatchers.isCompatibleAsIs[Letters.Value]()
   }
 }
