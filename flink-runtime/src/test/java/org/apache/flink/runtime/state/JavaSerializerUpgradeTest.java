@@ -51,7 +51,7 @@ public class JavaSerializerUpgradeTest extends TypeSerializerUpgradeTestBase<Ser
 
 		ArrayList<TestSpecification<?, ?>> testSpecifications = new ArrayList<>();
 
-		for (MigrationVersion migrationVersion : migrationVersions) {
+		for (MigrationVersion migrationVersion : MIGRATION_VERSIONS) {
 			testSpecifications.add(
 				new TestSpecification<>(
 					SPEC_NAME,

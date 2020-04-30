@@ -52,7 +52,7 @@ public class TwoPhaseCommitSinkStateSerializerUpgradeTest
 	public static Collection<TestSpecification<?, ?>> testSpecifications() throws Exception {
 
 		ArrayList<TestSpecification<?, ?>> testSpecifications = new ArrayList<>();
-		for (MigrationVersion migrationVersion : migrationVersions) {
+		for (MigrationVersion migrationVersion : MIGRATION_VERSIONS) {
 			testSpecifications.add(
 				new TestSpecification<>(
 					"two-phase-commit-sink-state-serializer",

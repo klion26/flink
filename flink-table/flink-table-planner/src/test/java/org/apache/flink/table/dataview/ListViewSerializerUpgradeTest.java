@@ -53,7 +53,7 @@ public class ListViewSerializerUpgradeTest extends TypeSerializerUpgradeTestBase
 	public static Collection<TestSpecification<?, ?>> testSpecifications() throws Exception {
 
 		ArrayList<TestSpecification<?, ?>> testSpecifications = new ArrayList<>();
-		for (MigrationVersion migrationVersion : migrationVersions) {
+		for (MigrationVersion migrationVersion : MIGRATION_VERSIONS) {
 			testSpecifications.add(
 				new TestSpecification<>(
 					SPEC_NAME,

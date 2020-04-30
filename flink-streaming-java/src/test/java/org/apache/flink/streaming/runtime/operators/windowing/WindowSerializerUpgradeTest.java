@@ -49,7 +49,7 @@ public class WindowSerializerUpgradeTest extends TypeSerializerUpgradeTestBase<O
 	public static Collection<TestSpecification<?, ?>> testSpecifications() throws Exception {
 
 		ArrayList<TestSpecification<?, ?>> testSpecifications = new ArrayList<>();
-		for (MigrationVersion migrationVersion : migrationVersions) {
+		for (MigrationVersion migrationVersion : MIGRATION_VERSIONS) {
 			testSpecifications.add(
 				new TestSpecification<>(
 					"time-window-serializer",

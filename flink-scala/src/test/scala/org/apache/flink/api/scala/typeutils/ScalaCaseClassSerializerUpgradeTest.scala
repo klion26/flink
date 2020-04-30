@@ -53,7 +53,7 @@ object ScalaCaseClassSerializerUpgradeTest {
   def testSpecifications(): util.Collection[TestSpecification[_, _]] = {
     val testSpecifications =
        new util.ArrayList[TypeSerializerUpgradeTestBase.TestSpecification[_, _]]
-    for (migrationVersion <- TypeSerializerUpgradeTestBase.migrationVersions) {
+    for (migrationVersion <- TypeSerializerUpgradeTestBase.MIGRATION_VERSIONS) {
       testSpecifications.add(
         new TypeSerializerUpgradeTestBase.TestSpecification[CustomCaseClass, CustomCaseClass]
         ("scala-case-class-serializer",

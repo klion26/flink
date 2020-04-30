@@ -48,7 +48,7 @@ object EnumValueSerializerUpgradeTest {
     val testSpecifications =
       new util.ArrayList[TypeSerializerUpgradeTestBase.TestSpecification[_, _]]
 
-    for (migrationVersion <- TypeSerializerUpgradeTestBase.migrationVersions) {
+    for (migrationVersion <- TypeSerializerUpgradeTestBase.MIGRATION_VERSIONS) {
       testSpecifications.add(
         new TypeSerializerUpgradeTestBase.TestSpecification[Letters.Value, Letters.Value](
         "scala-enum-serializer",

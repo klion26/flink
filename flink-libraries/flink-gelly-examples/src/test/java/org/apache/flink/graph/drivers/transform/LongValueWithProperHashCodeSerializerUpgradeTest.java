@@ -49,7 +49,7 @@ public class LongValueWithProperHashCodeSerializerUpgradeTest
 	public static Collection<TestSpecification<?, ?>> testSpecifications() throws Exception {
 
 		ArrayList<TestSpecification<?, ?>> testSpecifications = new ArrayList<>();
-		for (MigrationVersion migrationVersion : migrationVersions) {
+		for (MigrationVersion migrationVersion : MIGRATION_VERSIONS) {
 			testSpecifications.add(
 				new TestSpecification<>(
 					"long-value-with-proper-hash-code-serializer",
