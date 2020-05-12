@@ -57,14 +57,16 @@ class RocksDBReducingState<K, N, V>
 	 * @param reduceFunction The reduce function used for reducing state.
 	 * @param backend The backend for which this state is bind to.
 	 */
-	private RocksDBReducingState(ColumnFamilyHandle columnFamily,
+	private RocksDBReducingState(
+			String name,
+			ColumnFamilyHandle columnFamily,
 			TypeSerializer<N> namespaceSerializer,
 			TypeSerializer<V> valueSerializer,
 			V defaultValue,
 			ReduceFunction<V> reduceFunction,
 			RocksDBKeyedStateBackend<K> backend) {
 
-		super(columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
+		super(name, columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
 		this.reduceFunction = reduceFunction;
 	}
 
@@ -161,6 +163,7 @@ class RocksDBReducingState<K, N, V>
 		Tuple2<ColumnFamilyHandle, RegisteredKeyValueStateBackendMetaInfo<N, SV>> registerResult,
 		RocksDBKeyedStateBackend<K> backend) {
 		return (IS) new RocksDBReducingState<>(
+			stateDesc.getName(),
 			registerResult.f0,
 			registerResult.f1.getNamespaceSerializer(),
 			registerResult.f1.getStateSerializer(),

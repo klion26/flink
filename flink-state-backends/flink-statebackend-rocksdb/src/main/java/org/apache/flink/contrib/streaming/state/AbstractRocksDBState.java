@@ -73,6 +73,8 @@ public abstract class AbstractRocksDBState<K, N, V> implements InternalKvState<K
 
 	private final RocksDBSerializedCompositeKeyBuilder<K> sharedKeyNamespaceSerializer;
 
+	protected final String name;
+
 	/**
 	 * Creates a new RocksDB backed state.
 	 *
@@ -83,6 +85,7 @@ public abstract class AbstractRocksDBState<K, N, V> implements InternalKvState<K
 	 * @param backend The backend for which this state is bind to.
 	 */
 	protected AbstractRocksDBState(
+			String name,
 			ColumnFamilyHandle columnFamily,
 			TypeSerializer<N> namespaceSerializer,
 			TypeSerializer<V> valueSerializer,
@@ -91,6 +94,7 @@ public abstract class AbstractRocksDBState<K, N, V> implements InternalKvState<K
 
 		this.namespaceSerializer = namespaceSerializer;
 		this.backend = backend;
+		this.name = name;
 
 		this.columnFamily = columnFamily;
 
@@ -139,7 +143,8 @@ public abstract class AbstractRocksDBState<K, N, V> implements InternalKvState<K
 							32
 						);
 		keyBuilder.setKeyAndKeyGroup(keyAndNamespace.f0, keyGroup);
-		byte[] key = keyBuilder.buildCompositeKeyNamespace(keyAndNamespace.f1, namespaceSerializer);
+		//TODO !Single-CF! !Queryablestate!
+		byte[] key = keyBuilder.buildCompositeKeyNamespace("TODO_Queryable_state", keyAndNamespace.f1, namespaceSerializer);
 		return backend.db.get(columnFamily, key);
 	}
 
@@ -147,6 +152,7 @@ public abstract class AbstractRocksDBState<K, N, V> implements InternalKvState<K
 		UK userKey,
 		TypeSerializer<UK> userKeySerializer) throws IOException {
 		return sharedKeyNamespaceSerializer.buildCompositeKeyNamesSpaceUserKey(
+			name,
 			currentNamespace,
 			namespaceSerializer,
 			userKey,
@@ -160,7 +166,7 @@ public abstract class AbstractRocksDBState<K, N, V> implements InternalKvState<K
 	}
 
 	byte[] serializeCurrentKeyWithGroupAndNamespace() {
-		return sharedKeyNamespaceSerializer.buildCompositeKeyNamespace(currentNamespace, namespaceSerializer);
+		return sharedKeyNamespaceSerializer.buildCompositeKeyNamespace(name, currentNamespace, namespaceSerializer);
 	}
 
 	byte[] serializeValue(V value) throws IOException {

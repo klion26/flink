@@ -41,12 +41,13 @@ abstract class AbstractRocksDBAppendingState <K, N, IN, SV, OUT>
 	 * @param backend             The backend for which this state is bind to.
 	 */
 	protected AbstractRocksDBAppendingState(
+		String name,
 		ColumnFamilyHandle columnFamily,
 		TypeSerializer<N> namespaceSerializer,
 		TypeSerializer<SV> valueSerializer,
 		SV defaultValue,
 		RocksDBKeyedStateBackend<K> backend) {
-		super(columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
+		super(name, columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
 	}
 
 	@Override

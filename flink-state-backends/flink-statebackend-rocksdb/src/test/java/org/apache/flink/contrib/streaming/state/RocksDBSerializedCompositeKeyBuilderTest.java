@@ -114,7 +114,7 @@ public class RocksDBSerializedCompositeKeyBuilderTest {
 		for (K testKey : testKeys) {
 			int keyGroup = setKeyAndReturnKeyGroup(keyBuilder, testKey, maxParallelism);
 			for (N testNamespace : testNamespaces) {
-				byte[] compositeBytes = keyBuilder.buildCompositeKeyNamespace(testNamespace, namespaceSerializer);
+				byte[] compositeBytes = keyBuilder.buildCompositeKeyNamespace("FOR_TEST", testNamespace, namespaceSerializer);
 				deserializer.setBuffer(compositeBytes);
 				assertKeyGroupKeyNamespaceBytes(
 					testKey,
@@ -152,6 +152,7 @@ public class RocksDBSerializedCompositeKeyBuilderTest {
 			for (N testNamespace : testNamespaces) {
 				for (U testUserKey : testUserKeys) {
 					byte[] compositeBytes = keyBuilder.buildCompositeKeyNamesSpaceUserKey(
+						"ABC",
 						testNamespace,
 						namespaceSerializer,
 						testUserKey,

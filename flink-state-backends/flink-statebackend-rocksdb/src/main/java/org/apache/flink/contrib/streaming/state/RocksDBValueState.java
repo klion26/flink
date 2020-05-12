@@ -53,13 +53,14 @@ class RocksDBValueState<K, N, V>
 	 * @param backend The backend for which this state is bind to.
 	 */
 	private RocksDBValueState(
+			String stateName,
 			ColumnFamilyHandle columnFamily,
 			TypeSerializer<N> namespaceSerializer,
 			TypeSerializer<V> valueSerializer,
 			V defaultValue,
 			RocksDBKeyedStateBackend<K> backend) {
 
-		super(columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
+		super(stateName, columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
 	}
 
 	@Override
@@ -115,6 +116,7 @@ class RocksDBValueState<K, N, V>
 		Tuple2<ColumnFamilyHandle, RegisteredKeyValueStateBackendMetaInfo<N, SV>> registerResult,
 		RocksDBKeyedStateBackend<K> backend) {
 		return (IS) new RocksDBValueState<>(
+			stateDesc.getName(),
 			registerResult.f0,
 			registerResult.f1.getNamespaceSerializer(),
 			registerResult.f1.getStateSerializer(),

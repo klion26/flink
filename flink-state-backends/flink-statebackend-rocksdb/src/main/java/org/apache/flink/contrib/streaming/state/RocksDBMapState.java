@@ -81,13 +81,14 @@ class RocksDBMapState<K, N, UK, UV>
 	 * @param backend The backend for which this state is bind to.
 	 */
 	private RocksDBMapState(
+			String name,
 			ColumnFamilyHandle columnFamily,
 			TypeSerializer<N> namespaceSerializer,
 			TypeSerializer<Map<UK, UV>> valueSerializer,
 			Map<UK, UV> defaultValue,
 			RocksDBKeyedStateBackend<K> backend) {
 
-		super(columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
+		super(name, columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
 
 		Preconditions.checkState(valueSerializer instanceof MapSerializer, "Unexpected serializer type.");
 
@@ -301,7 +302,7 @@ class RocksDBMapState<K, N, UK, UV>
 
 		keyBuilder.setKeyAndKeyGroup(keyAndNamespace.f0, keyGroup);
 
-		final byte[] keyPrefixBytes = keyBuilder.buildCompositeKeyNamespace(keyAndNamespace.f1, namespaceSerializer);
+		final byte[] keyPrefixBytes = keyBuilder.buildCompositeKeyNamespace(name, keyAndNamespace.f1, namespaceSerializer);
 
 		final MapSerializer<UK, UV> serializer = (MapSerializer<UK, UV>) safeValueSerializer;
 
@@ -632,6 +633,7 @@ class RocksDBMapState<K, N, UK, UV>
 		Tuple2<ColumnFamilyHandle, RegisteredKeyValueStateBackendMetaInfo<N, SV>> registerResult,
 		RocksDBKeyedStateBackend<K> backend) {
 		return (IS) new RocksDBMapState<>(
+			stateDesc.getName(),
 			registerResult.f0,
 			registerResult.f1.getNamespaceSerializer(),
 			(TypeSerializer<Map<UK, UV>>) registerResult.f1.getStateSerializer(),

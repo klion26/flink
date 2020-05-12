@@ -60,6 +60,7 @@ class RocksDBAggregatingState<K, N, T, ACC, R>
 	 * @param backend The backend for which this state is bind to.
 	 */
 	private RocksDBAggregatingState(
+			String name,
 			ColumnFamilyHandle columnFamily,
 			TypeSerializer<N> namespaceSerializer,
 			TypeSerializer<ACC> valueSerializer,
@@ -67,7 +68,7 @@ class RocksDBAggregatingState<K, N, T, ACC, R>
 			AggregateFunction<T, ACC, R> aggFunction,
 			RocksDBKeyedStateBackend<K> backend) {
 
-		super(columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
+		super(name, columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
 		this.aggFunction = aggFunction;
 	}
 
@@ -168,6 +169,7 @@ class RocksDBAggregatingState<K, N, T, ACC, R>
 		Tuple2<ColumnFamilyHandle, RegisteredKeyValueStateBackendMetaInfo<N, SV>> registerResult,
 		RocksDBKeyedStateBackend<K> backend) {
 		return (IS) new RocksDBAggregatingState<>(
+			stateDesc.getName(),
 			registerResult.f0,
 			registerResult.f1.getNamespaceSerializer(),
 			registerResult.f1.getStateSerializer(),

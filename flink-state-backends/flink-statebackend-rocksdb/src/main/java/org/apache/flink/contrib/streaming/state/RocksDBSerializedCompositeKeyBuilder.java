@@ -21,6 +21,7 @@ package org.apache.flink.contrib.streaming.state;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.common.typeutils.base.StringSerializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
 import org.apache.flink.util.FlinkRuntimeException;
 
@@ -109,9 +110,13 @@ class RocksDBSerializedCompositeKeyBuilder<K> {
 	 * @return the bytes for the serialized composite key of key-group, key, namespace.
 	 */
 	@Nonnull
-	public <N> byte[] buildCompositeKeyNamespace(@Nonnull N namespace, @Nonnull TypeSerializer<N> namespaceSerializer) {
+	public <N> byte[] buildCompositeKeyNamespace(
+		String name,
+		@Nonnull N namespace, @Nonnull TypeSerializer<N> namespaceSerializer) {
 		try {
-			serializeNamespace(namespace, namespaceSerializer);
+			//TODO !Single-CF!
+			StringSerializer.INSTANCE.serialize(name, keyOutView);
+			serializeNamespace(name, namespace, namespaceSerializer);
 			final byte[] result = keyOutView.getCopyOfBuffer();
 			resetToKey();
 			return result;
@@ -134,11 +139,12 @@ class RocksDBSerializedCompositeKeyBuilder<K> {
 	 */
 	@Nonnull
 	public <N, UK> byte[] buildCompositeKeyNamesSpaceUserKey(
+		@Nonnull String name,
 		@Nonnull N namespace,
 		@Nonnull TypeSerializer<N> namespaceSerializer,
 		@Nonnull UK userKey,
 		@Nonnull TypeSerializer<UK> userKeySerializer) throws IOException {
-		serializeNamespace(namespace, namespaceSerializer);
+		serializeNamespace(name, namespace, namespaceSerializer);
 		userKeySerializer.serialize(userKey, keyOutView);
 		byte[] result = keyOutView.getCopyOfBuffer();
 		resetToKey();
@@ -156,11 +162,13 @@ class RocksDBSerializedCompositeKeyBuilder<K> {
 			keyGroupPrefixBytes,
 			keyOutView);
 		// write key
+//		StringSerializer.INSTANCE.serialize(stateName, keyOutView);
 		keySerializer.serialize(key, keyOutView);
 		afterKeyMark = keyOutView.length();
 	}
 
 	private <N> void serializeNamespace(
+		@Nonnull String name,
 		@Nonnull N namespace,
 		@Nonnull TypeSerializer<N> namespaceSerializer) throws IOException {
 
@@ -173,6 +181,7 @@ class RocksDBSerializedCompositeKeyBuilder<K> {
 				afterKeyMark - keyGroupPrefixBytes,
 				keyOutView);
 		}
+		StringSerializer.INSTANCE.serialize(name, keyOutView);
 		RocksDBKeySerializationUtils.writeNameSpace(
 			namespace,
 			namespaceSerializer,

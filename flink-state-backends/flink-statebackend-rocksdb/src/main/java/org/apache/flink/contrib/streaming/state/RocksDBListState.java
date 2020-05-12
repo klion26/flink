@@ -79,13 +79,14 @@ class RocksDBListState<K, N, V>
 	 * @param backend The backend for which this state is bind to.
 	 */
 	private RocksDBListState(
+			String statename,
 			ColumnFamilyHandle columnFamily,
 			TypeSerializer<N> namespaceSerializer,
 			TypeSerializer<List<V>> valueSerializer,
 			List<V> defaultValue,
 			RocksDBKeyedStateBackend<K> backend) {
 
-		super(columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
+		super(statename, columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
 
 		ListSerializer<V> castedListSerializer = (ListSerializer<V>) valueSerializer;
 		this.elementSerializer = castedListSerializer.getElementSerializer();
@@ -276,6 +277,7 @@ class RocksDBListState<K, N, V>
 		Tuple2<ColumnFamilyHandle, RegisteredKeyValueStateBackendMetaInfo<N, SV>> registerResult,
 		RocksDBKeyedStateBackend<K> backend) {
 		return (IS) new RocksDBListState<>(
+			stateDesc.getName(),
 			registerResult.f0,
 			registerResult.f1.getNamespaceSerializer(),
 			(TypeSerializer<List<E>>) registerResult.f1.getStateSerializer(),

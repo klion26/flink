@@ -59,6 +59,7 @@ class RocksDBFoldingState<K, N, T, ACC>
 	 * @param backend The backend for which this state is bind to.
 	 */
 	private RocksDBFoldingState(
+		String name,
 		ColumnFamilyHandle columnFamily,
 		TypeSerializer<N> namespaceSerializer,
 		TypeSerializer<ACC> valueSerializer,
@@ -66,7 +67,7 @@ class RocksDBFoldingState<K, N, T, ACC>
 		FoldFunction<T, ACC> foldFunction,
 		RocksDBKeyedStateBackend<K> backend) {
 
-		super(columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
+		super(name, columnFamily, namespaceSerializer, valueSerializer, defaultValue, backend);
 
 		this.foldFunction = foldFunction;
 	}
@@ -106,6 +107,7 @@ class RocksDBFoldingState<K, N, T, ACC>
 		Tuple2<ColumnFamilyHandle, RegisteredKeyValueStateBackendMetaInfo<N, SV>> registerResult,
 		RocksDBKeyedStateBackend<K> backend) {
 		return (IS) new RocksDBFoldingState<>(
+			stateDesc.getName(),
 			registerResult.f0,
 			registerResult.f1.getNamespaceSerializer(),
 			registerResult.f1.getStateSerializer(),
