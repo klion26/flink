@@ -119,7 +119,7 @@ class ValuesOperationFactory {
 				DataType targetDataType = dataTypes[i];
 
 				return convertToExpectedType(castedExpr, targetDataType, postResolverFactory)
-					.orElseThrow(() -> new ValidationException(String.format(
+					.<ValidationException>orElseThrow(() -> new ValidationException(String.format(
 						"Could not cast the value of the %d column: [ %s ] of a row: %s to the requested type: %s",
 						i,
 						castedExpr.asSummaryString(),
