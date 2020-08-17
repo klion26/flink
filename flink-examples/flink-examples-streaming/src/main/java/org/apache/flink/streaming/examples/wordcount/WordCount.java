@@ -79,6 +79,7 @@ public class WordCount {
 			text = env.fromElements(WordCountData.WORDS);
 		}
 
+		text.rescale()
 		DataStream<Tuple2<String, Integer>> counts =
 			// split up the lines in pairs (2-tuples) containing: (word,1)
 			text.flatMap(new Tokenizer())

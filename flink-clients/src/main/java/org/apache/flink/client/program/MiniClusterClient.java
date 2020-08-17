@@ -175,6 +175,12 @@ public class MiniClusterClient implements ClusterClient<MiniClusterClient.MiniCl
 		}
 	}
 
+	@Override
+	public CompletableFuture<String> listCheckpointFile(String checkpointDirectory) {
+		//TODO:K
+		return null;
+	}
+
 	/**
 	 * The type of the Cluster ID for the local {@link MiniCluster}.
 	 */

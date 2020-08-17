@@ -98,6 +98,7 @@ public class CliFrontend {
 	private static final String ACTION_CANCEL = "cancel";
 	private static final String ACTION_STOP = "stop";
 	private static final String ACTION_SAVEPOINT = "savepoint";
+	private static final String ACTION_CHECKPOINT = "checkpoint";
 
 	// configuration dir parameters
 	private static final String CONFIG_DIRECTORY_FALLBACK_1 = "../conf";
@@ -691,6 +692,48 @@ public class CliFrontend {
 		logAndSysout("Savepoint '" + savepointPath + "' disposed.");
 	}
 
+	private void checkpoint(String[] args) throws Exception {
+		LOG.info("Running 'checkpoint' command.");
+
+		final Options commandOptions = CliFrontendParser.getCheckpointCommandOptions();
+
+		final Options commandLineOptions = CliFrontendParser.mergeOptions(commandOptions, customCommandLineOptions);
+
+		final CommandLine commandLine = CliFrontendParser.parse(commandLineOptions, args, false);
+
+		final CheckpointOptions checkpointOptions = new CheckpointOptions(commandLine);
+
+		// evaluate help flag
+		if (checkpointOptions.isPrintHelp()) {
+			CliFrontendParser.printHelpForCheckpoint(customCommandLines);
+			return;
+		}
+
+		final CustomCommandLine activeCommandLine = validateAndGetActiveCommandLine(commandLine);
+
+		runClusterAction(
+			activeCommandLine,
+			commandLine,
+			clusterClient -> checkpointListFile(clusterClient, checkpointOptions.getCheckpointPath()));
+	}
+
+	private void checkpointListFile(ClusterClient<?> clusterClient, String checkpointDirectory) throws FlinkException {
+		logAndSysout("Try to list files for checkpoint " + checkpointDirectory + ".");
+
+		CompletableFuture<String> checkpointListFuture = clusterClient.listCheckpointFile(checkpointDirectory);
+
+		logAndSysout("Waiting for response...");
+
+		try {
+			final String files = checkpointListFuture.get(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
+
+			logAndSysout("Get files for checkpoint complete. files: " + files);
+		} catch (Exception e) {
+			Throwable cause = ExceptionUtils.stripExecutionException(e);
+			throw new FlinkException(String.format("List checkpoint failed for %s", checkpointDirectory), cause);
+		}
+	}
+
 	// --------------------------------------------------------------------------------------------
 	//  Interaction with programs and JobManager
 	// --------------------------------------------------------------------------------------------
@@ -932,6 +975,9 @@ public class CliFrontend {
 					return 0;
 				case ACTION_SAVEPOINT:
 					savepoint(params);
+					return 0;
+				case ACTION_CHECKPOINT:
+					checkpoint(params);
 					return 0;
 				case "-h":
 				case "--help":

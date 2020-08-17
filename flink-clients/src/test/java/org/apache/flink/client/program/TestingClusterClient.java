@@ -136,6 +136,12 @@ public class TestingClusterClient<T> implements ClusterClient<T> {
 	}
 
 	@Override
+	public CompletableFuture<String> listCheckpointFile(String checkpointDirectory) {
+		//TODO:K
+		return null;
+	}
+
+	@Override
 	public CompletableFuture<CoordinationResponse> sendCoordinationRequest(
 			JobID jobId,
 			OperatorID operatorId,

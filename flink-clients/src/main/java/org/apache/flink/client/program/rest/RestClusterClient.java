@@ -63,6 +63,11 @@ import org.apache.flink.runtime.rest.messages.RequestBody;
 import org.apache.flink.runtime.rest.messages.ResponseBody;
 import org.apache.flink.runtime.rest.messages.TerminationModeQueryParameter;
 import org.apache.flink.runtime.rest.messages.TriggerId;
+import org.apache.flink.runtime.rest.messages.checkpoints.CheckpointFiles;
+import org.apache.flink.runtime.rest.messages.checkpoints.CheckpointListHeaders;
+import org.apache.flink.runtime.rest.messages.checkpoints.CheckpointListRequest;
+import org.apache.flink.runtime.rest.messages.checkpoints.CheckpointListStatusHeaders;
+import org.apache.flink.runtime.rest.messages.checkpoints.CheckpointListStatusMessageParameters;
 import org.apache.flink.runtime.rest.messages.cluster.ShutdownHeaders;
 import org.apache.flink.runtime.rest.messages.job.JobDetailsHeaders;
 import org.apache.flink.runtime.rest.messages.job.JobDetailsInfo;
@@ -559,6 +564,39 @@ public class RestClusterClient<T> implements ClusterClient<T> {
 					throw new CompletionException(asynchronousOperationInfo.getFailureCause());
 				}
 			});
+	}
+
+	@Override
+	public CompletableFuture<String> listCheckpointFile(String checkpointDirectory) {
+		final CheckpointListRequest checkpointListRequest = new CheckpointListRequest(checkpointDirectory);
+
+		final CompletableFuture<TriggerResponse> checkpointListTriggerFuture = sendRequest(
+			CheckpointListHeaders.getInstance(),
+			checkpointListRequest);
+
+		final CompletableFuture<CheckpointFiles> checkpointListFuture = checkpointListTriggerFuture.thenCompose(
+			(TriggerResponse triggerResponse) -> {
+				final TriggerId triggerId = triggerResponse.getTriggerId();
+				final CheckpointListStatusHeaders checkpointListStatusHeaders = CheckpointListStatusHeaders.getInstance();
+				final CheckpointListStatusMessageParameters checkpointListStatusMessageParameters = checkpointListStatusHeaders.getUnresolvedMessageParameters();
+				checkpointListStatusMessageParameters.triggerIdPathParameter.resolve(triggerId);
+
+				return pollResourceAsync(
+					() -> sendRequest(
+						checkpointListStatusHeaders,
+						checkpointListStatusMessageParameters));
+
+			});
+
+		return checkpointListFuture.thenApply(
+			(CheckpointFiles checkpointFiles) -> {
+				if (checkpointFiles.getFiles() != null) {
+					return checkpointFiles.getFiles();
+				} else {
+					throw new CompletionException(checkpointFiles.getFailureCause());
+				}
+			}
+		);
 	}
 
 	@Override

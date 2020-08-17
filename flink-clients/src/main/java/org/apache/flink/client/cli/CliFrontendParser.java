@@ -166,6 +166,9 @@ public class CliFrontendParser {
 			"Pip (version >= 7.1.0) and SetupTools (version >= 37.0.0). " +
 			"Please ensure that the specified environment meets the above requirements.");
 
+	public static final Option CHECKPOINT = new Option("c", "checkpoint", true,
+		"Path to the checkpoint (for example hdfs:///flink/savepoint-1537).");
+
 	static {
 		HELP_OPTION.setRequired(false);
 
@@ -228,6 +231,9 @@ public class CliFrontendParser {
 		PYARCHIVE_OPTION.setRequired(false);
 
 		PYEXEC_OPTION.setRequired(false);
+
+		CHECKPOINT.setRequired(false);
+		CHECKPOINT.setArgName("checkpointPath");
 	}
 
 	static final Options RUN_OPTIONS = getRunCommandOptions();
@@ -255,6 +261,7 @@ public class CliFrontendParser {
 		options.addOption(PYREQUIREMENTS_OPTION);
 		options.addOption(PYARCHIVE_OPTION);
 		options.addOption(PYEXEC_OPTION);
+		options.addOption(CHECKPOINT);
 		return options;
 	}
 
@@ -270,6 +277,7 @@ public class CliFrontendParser {
 		options.addOption(PYREQUIREMENTS_OPTION);
 		options.addOption(PYARCHIVE_OPTION);
 		options.addOption(PYEXEC_OPTION);
+		options.addOption(CHECKPOINT);
 		return options;
 	}
 
@@ -307,6 +315,11 @@ public class CliFrontendParser {
 		Options options = buildGeneralOptions(new Options());
 		options.addOption(SAVEPOINT_DISPOSE_OPTION);
 		return options.addOption(JAR_OPTION);
+	}
+
+	static Options getCheckpointCommandOptions() {
+		return buildGeneralOptions(new Options())
+			.addOption(CHECKPOINT);
 	}
 
 	// --------------------------------------------------------------------------------------------
@@ -448,6 +461,21 @@ public class CliFrontendParser {
 		System.out.println("\n  Syntax: savepoint [OPTIONS] <Job ID> [<target directory>]");
 		formatter.setSyntaxPrefix("  \"savepoint\" action options:");
 		formatter.printHelp(" ", getSavepointOptionsWithoutDeprecatedOptions(new Options()));
+
+		printCustomCliOptions(customCommandLines, formatter, false);
+
+		System.out.println();
+	}
+
+	public static void printHelpForCheckpoint(Collection<CustomCommandLine> customCommandLines) {
+		HelpFormatter formatter = new HelpFormatter();
+		formatter.setLeftPadding(5);
+		formatter.setWidth(80);
+
+		System.out.println("\nAction \"checkpoint\" list the files in a checkpoint.");
+		System.out.println("\n  Syntax: checkpoint <checkpoint directory>");
+		formatter.setSyntaxPrefix("  \"checkpoint\" action options:");
+		formatter.printHelp(" ", getCheckpointCommandOptions());
 
 		printCustomCliOptions(customCommandLines, formatter, false);
 

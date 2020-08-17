@@ -175,4 +175,11 @@ public interface ClusterClient<T> extends AutoCloseable {
 	 * @return the response from the coordinator
 	 */
 	CompletableFuture<CoordinationResponse> sendCoordinationRequest(JobID jobId, OperatorID operatorId, CoordinationRequest request);
+
+	/**
+	 * List the files used for the given checkpoint.
+	 * @param checkpointDirectory The directory contains the checkpoint metadata.
+	 * @return The files used by the given checkpoint. empty if can't find a valid checkpoint metadata.
+	 */
+	CompletableFuture<String> listCheckpointFile(String checkpointDirectory);
 }
